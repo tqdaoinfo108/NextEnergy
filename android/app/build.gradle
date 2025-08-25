@@ -1,0 +1,80 @@
+plugins {
+    id "com.android.application"
+    // FlutterFire (Google services)
+    id "com.google.gms.google-services" version "4.4.2"
+    // Kotlin
+    id "kotlin-android"
+    // Flutter Gradle plugin (luôn đứng sau Android & Kotlin)
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace = "vn.gbsofit.charger"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = "27.0.12077973"
+
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    defaultConfig {
+        applicationId = "vn.gbsofit.charger"
+        minSdk = flutter.minSdkVersion
+        targetSdk = 35
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    signingConfigs {
+        release {
+            keyAlias 'key0'
+            keyPassword '@@Qdao100897'
+            storeFile file('./../../nextenergy.jks')
+            storePassword '@@Qdao100897'
+        }
+    }
+
+    // 🚫 TẮT split để không “đánh rơi” asset vào các biến thể
+    bundle {
+        abi {
+            enableSplit = false
+        }
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = false
+        }
+    }
+    // Nếu bạn đang build APK split, cũng tắt ở đây cho chắc:
+    splits {
+        abi { enable false }
+        density { enable false }
+        language { enable false }
+    }
+
+    buildTypes {
+        release {
+            // Sử dụng signing config release
+            signingConfig = signingConfigs.release
+            // (giữ nguyên shrinker mặc định của Flutter)
+            ndk {
+                debugSymbolLevel = 'NONE'
+            }
+        }
+        debug { }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+}

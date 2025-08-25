@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "905212334909",
+    "project_id": "takara-charging",
+    "storage_bucket": "takara-charging.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:905212334909:android:af71685e917d49afd22b54",
+        "android_client_info": {
+          "package_name": "vn.gbsofit.charger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8GzKLrNyipkkzbq6XmCNSRygs2U81c4Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
