@@ -16,7 +16,6 @@ import '../../model/user_model.dart';
 import '../../services/base_hive.dart';
 import '../../services/https.dart';
 import '../../utils/const.dart';
-import 'home_detail.dart';
 
 class HomeBind extends Bindings {
   @override
@@ -52,7 +51,9 @@ class HomeController extends GetxController {
       ResponseBase(totals: 0, data: []);
 
   ResponseBase<List<ParkingModel>> get getListParkSlotTemp => listParkSlotTemp;
-  // ParkingModel parkCurrent = ParkingModel();
+  
+  // Selected station for displaying in bottom card
+  var selectedStation = Rx<ParkingModel?>(null);
 
   RxSet<Marker> listMaker = RxSet();
 
@@ -89,6 +90,15 @@ class HomeController extends GetxController {
   updateUserModel(UserModel _userModel) {
     userModel.value = _userModel;
     update();
+  }
+
+  // Methods for selectedStation
+  void selectStation(ParkingModel station) {
+    selectedStation.value = station;
+  }
+
+  void clearSelectedStation() {
+    selectedStation.value = null;
   }
 
   getListParkSlot() async {
@@ -217,7 +227,7 @@ class HomeController extends GetxController {
               title: '${item.nameParking}',
               snippet: '${item.addressParking}',
               onTap: () {
-                showPopupLocationDetail(Get.context!, item);
+                selectStation(item);
               }),
           // ignore: use_build_context_synchronously
         ));
