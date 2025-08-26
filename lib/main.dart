@@ -1,19 +1,13 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
-import 'dart:math';
-import 'dart:ui';
+import 'utils/app_theme.dart';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:phone_form_field/phone_form_field.dart';
 import 'package:v2/routers/router.dart';
@@ -26,7 +20,9 @@ import 'services/base_hive.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+
 import 'utils/const.dart';
+import 'utils/app_theme.dart';
 
 Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -126,36 +122,9 @@ class _MyAppState extends State<MyApp> {
           Locale('vi', ''),
           Locale('en', ''),
         ],
-        theme: FlexThemeData.light(
-          scheme: FlexScheme.bahamaBlue,
-          surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-          blendLevel: 9,
-          subThemesData: const FlexSubThemesData(
-            blendOnLevel: 10,
-            blendOnColors: false,
-          ),
-          visualDensity: FlexColorScheme.comfortablePlatformDensity,
-          useMaterial3: true,
-          swapLegacyOnMaterial3: true,
-          fontFamily: GoogleFonts.ubuntu().fontFamily,
-          primary: const Color(0xFF0984e3),
-        ),
-        darkTheme: FlexThemeData.dark(
-          scheme: FlexScheme.bahamaBlue,
-          surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-          blendLevel: 15,
-          subThemesData: const FlexSubThemesData(
-            blendOnLevel: 20,
-          ),
-          visualDensity: FlexColorScheme.comfortablePlatformDensity,
-          useMaterial3: true,
-          swapLegacyOnMaterial3: true,
-          fontFamily: GoogleFonts.ubuntu().fontFamily,
-          primary: const Color(0xFF0984e3),
-        ),
-        themeMode: HiveHelper.get(Constants.IS_DARK_MODE, defaultvalue: false)
-            ? ThemeMode.dark
-            : ThemeMode.light,
+        theme: AppTheme.lightTheme,
+        // Có thể bổ sung darkTheme nếu muốn, hoặc để mặc định
+        themeMode: ThemeMode.light,
         debugShowCheckedModeBanner: false,
       ),
     );
