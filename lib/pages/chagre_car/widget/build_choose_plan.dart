@@ -12,7 +12,7 @@ import '../../customs/circular_progress_indicator.dart';
 import '../../customs/count_down.dart';
 import '../../customs/dialog_custom.dart';
 import '../../customs/spinner_item_selector_widget.dart';
-import '../../payment/payment_3ds_page.dart';
+import 'payment_webview_bottomsheet.dart';
 
 Widget buildChooseSlotCharge(
     BuildContext context, ChargeCarController controller) {
@@ -51,7 +51,7 @@ Widget buildChooseSlotCharge(
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
                     const SizedBox(height: 12),
-                    controller.listPrice.value.isEmpty
+                    controller.listPrice.isEmpty
                         ? const CircularProgressIndicatorCustom()
                         : Column(
                             children: [
@@ -142,26 +142,40 @@ Widget buildChooseSlotCharge(
                               }
                             } else {
                               // thanh toán = visa
-                              var result = await Get.dialog(
-                                const Payment3DSPage(),
-                                arguments: PaymentDtoModel(
-                                    controller.bookingData?.hardwareID ??
-                                        controller.bleResponseModel.myId,
-                                    controller.currentPrice.value.priceID!,
-                                    controller.bookingData?.bookID,
-                                    false,
-                                    timeNow:
-                                        DateTime.now().millisecondsSinceEpoch ~/
-                                            1000),
-                                barrierDismissible: false,
-                              );
+                              var result = await controller.onBookingPayment();
 
-                              if (result != null &&
-                                  (result as ResponseBase<PaymentModel>?) !=
-                                      null) {
-                                controller.setPaymentData(
-                                    result as ResponseBase<PaymentModel>);
-                                await letOpenHardware(context, controller);
+                              if (result != null) {
+                                // Kiểm tra nếu có reqRedirectionUri thì hiển thị bottomsheet
+                                if (result.reqRedirectionUri != null && 
+                                    result.reqRedirectionUri!.isNotEmpty) {
+                                  // ignore: use_build_context_synchronously
+                                  final paymentResult = await showPaymentBottomSheet(
+                                    context: context,
+                                    url: result.reqRedirectionUri!,
+                                    onPaymentComplete: () {
+                                      // Thanh toán thành công, tiếp tục với quy trình
+                                      debugPrint('Payment completed successfully');
+                                    },
+                                    onPaymentCancelled: () {
+                                      // Thanh toán bị hủy
+                                      EasyLoading.showInfo('Thanh toán đã bị hủy');
+                                    },
+                                  );
+
+                                  if (paymentResult == true) {
+                                    // Thanh toán thành công, tiếp tục với hardware
+                                    controller.setPaymentData(
+                                        ResponseBase<PaymentModel>(data: result));
+                                    // ignore: use_build_context_synchronously
+                                    await letOpenHardware(context, controller);
+                                  }
+                                } else {
+                                  // Không có reqRedirectionUri, xử lý bình thường
+                                  controller.setPaymentData(
+                                      ResponseBase<PaymentModel>(data: result));
+                                  // ignore: use_build_context_synchronously
+                                  await letOpenHardware(context, controller);
+                                }
                               } else {
                                 // back ra do hết giờ hoặc thất bại
                                 //  if ((controller.timeBookingNow + 300) <

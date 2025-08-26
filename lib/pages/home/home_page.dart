@@ -23,8 +23,9 @@ class HomePage extends GetView<HomeController> {
     String googleMapDarkTheme =
         "[{\"elementType\":\"geometry\",\"stylers\":[{\"color\":\"#1a1a1a\"}]},{\"elementType\":\"labels.text.fill\",\"stylers\":[{\"color\":\"#8a8a8a\"}]},{\"elementType\":\"labels.text.stroke\",\"stylers\":[{\"color\":\"#1a1a1a\"}]},{\"featureType\":\"administrative.locality\",\"elementType\":\"labels.text.fill\",\"stylers\":[{\"color\":\"#ffffff\"}]},{\"featureType\":\"poi\",\"elementType\":\"labels.text.fill\",\"stylers\":[{\"color\":\"#8a8a8a\"}]},{\"featureType\":\"poi.business\",\"stylers\":[{\"visibility\":\"off\"}]},{\"featureType\":\"poi.park\",\"elementType\":\"geometry\",\"stylers\":[{\"color\":\"#2d4a2e\"}]},{\"featureType\":\"poi.park\",\"elementType\":\"labels.text\",\"stylers\":[{\"visibility\":\"off\"}]},{\"featureType\":\"road\",\"elementType\":\"geometry\",\"stylers\":[{\"color\":\"#2d2d2d\"}]},{\"featureType\":\"road\",\"elementType\":\"geometry.stroke\",\"stylers\":[{\"color\":\"#1a1a1a\"}]},{\"featureType\":\"road\",\"elementType\":\"labels.text.fill\",\"stylers\":[{\"color\":\"#8a8a8a\"}]},{\"featureType\":\"road.highway\",\"elementType\":\"geometry\",\"stylers\":[{\"color\":\"#3d3d3d\"}]},{\"featureType\":\"road.highway\",\"elementType\":\"geometry.stroke\",\"stylers\":[{\"color\":\"#1a1a1a\"}]},{\"featureType\":\"road.highway\",\"elementType\":\"labels.text.fill\",\"stylers\":[{\"color\":\"#ffffff\"}]},{\"featureType\":\"transit\",\"elementType\":\"geometry\",\"stylers\":[{\"color\":\"#2d2d2d\"}]},{\"featureType\":\"transit.station\",\"elementType\":\"labels.text.fill\",\"stylers\":[{\"color\":\"#8a8a8a\"}]},{\"featureType\":\"water\",\"elementType\":\"geometry\",\"stylers\":[{\"color\":\"#1DB954\"}]},{\"featureType\":\"water\",\"elementType\":\"labels.text.fill\",\"stylers\":[{\"color\":\"#ffffff\"}]},{\"featureType\":\"water\",\"elementType\":\"labels.text.stroke\",\"stylers\":[{\"color\":\"#1DB954\"}]}]";
 
-    String googleMapLightTheme = '''[ { "featureType": "all", "elementType": "labels.text.fill", "stylers": [ { "saturation": 36 }, { "color": "#333333" }, { "lightness": 40 } ] }, { "featureType": "all", "elementType": "labels.text.stroke", "stylers": [ { "visibility": "on" }, { "color": "#ffffff" }, { "lightness": 16 } ] }, { "featureType": "all", "elementType": "labels.icon", "stylers": [ { "visibility": "off" } ] }, { "featureType": "administrative", "elementType": "geometry.fill", "stylers": [ { "color": "#fefefe" }, { "lightness": 20 } ] }, { "featureType": "administrative", "elementType": "geometry.stroke", "stylers": [ { "color": "#fefefe" }, { "lightness": 17 }, { "weight": 1.2 } ] }, { "featureType": "landscape", "elementType": "geometry", "stylers": [ { "color": "#f5f5f5" }, { "lightness": 20 } ] }, { "featureType": "poi", "elementType": "geometry", "stylers": [ { "color": "#f5f5f5" }, { "lightness": 21 } ] }, { "featureType": "poi.business", "stylers": [ { "visibility": "off" } ] }, { "featureType": "poi.park", "elementType": "geometry", "stylers": [ { "color": "#dedede" }, { "lightness": 21 } ] }, { "featureType": "poi.park", "elementType": "labels.text", "stylers": [ { "visibility": "off" } ] }, { "featureType": "road.highway", "elementType": "geometry.fill", "stylers": [ { "color": "#ffffff" }, { "lightness": 17 } ] }, { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [ { "color": "#ffffff" }, { "lightness": 29 }, { "weight": 0.2 } ] }, { "featureType": "road.arterial", "elementType": "geometry", "stylers": [ { "color": "#ffffff" }, { "lightness": 18 } ] }, { "featureType": "road.local", "elementType": "geometry", "stylers": [ { "color": "#ffffff" }, { "lightness": 16 } ] }, { "featureType": "transit", "elementType": "geometry", "stylers": [ { "color": "#f2f2f2" }, { "lightness": 19 } ] }, { "featureType": "water", "elementType": "geometry", "stylers": [ { "color": "#e9e9e9" }, { "lightness": 17 } ] } ]''';
-    
+    String googleMapLightTheme =
+        '''[ { "featureType": "all", "elementType": "labels.text.fill", "stylers": [ { "saturation": 36 }, { "color": "#333333" }, { "lightness": 40 } ] }, { "featureType": "all", "elementType": "labels.text.stroke", "stylers": [ { "visibility": "on" }, { "color": "#ffffff" }, { "lightness": 16 } ] }, { "featureType": "all", "elementType": "labels.icon", "stylers": [ { "visibility": "off" } ] }, { "featureType": "administrative", "elementType": "geometry.fill", "stylers": [ { "color": "#fefefe" }, { "lightness": 20 } ] }, { "featureType": "administrative", "elementType": "geometry.stroke", "stylers": [ { "color": "#fefefe" }, { "lightness": 17 }, { "weight": 1.2 } ] }, { "featureType": "landscape", "elementType": "geometry", "stylers": [ { "color": "#f5f5f5" }, { "lightness": 20 } ] }, { "featureType": "poi", "elementType": "geometry", "stylers": [ { "color": "#f5f5f5" }, { "lightness": 21 } ] }, { "featureType": "poi.business", "stylers": [ { "visibility": "off" } ] }, { "featureType": "poi.park", "elementType": "geometry", "stylers": [ { "color": "#dedede" }, { "lightness": 21 } ] }, { "featureType": "poi.park", "elementType": "labels.text", "stylers": [ { "visibility": "off" } ] }, { "featureType": "road.highway", "elementType": "geometry.fill", "stylers": [ { "color": "#ffffff" }, { "lightness": 17 } ] }, { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [ { "color": "#ffffff" }, { "lightness": 29 }, { "weight": 0.2 } ] }, { "featureType": "road.arterial", "elementType": "geometry", "stylers": [ { "color": "#ffffff" }, { "lightness": 18 } ] }, { "featureType": "road.local", "elementType": "geometry", "stylers": [ { "color": "#ffffff" }, { "lightness": 16 } ] }, { "featureType": "transit", "elementType": "geometry", "stylers": [ { "color": "#f2f2f2" }, { "lightness": 19 } ] }, { "featureType": "water", "elementType": "geometry", "stylers": [ { "color": "#e9e9e9" }, { "lightness": 17 } ] } ]''';
+
     void showSheet() {
       controller.getListParkSlot();
       showFlexibleBottomSheet<void>(
@@ -46,52 +47,54 @@ class HomePage extends GetView<HomeController> {
       );
     }
 
-    Widget buildBody(BuildContext context, GlobalKey<ScaffoldState> sliderDrawerKey) {
+    Widget buildBody(
+        BuildContext context, GlobalKey<ScaffoldState> sliderDrawerKey) {
       return Stack(
         children: [
           // Full screen Google Map with Obx for markers
           Positioned.fill(
             child: Obx(() => GoogleMap(
-              mapToolbarEnabled: false,
-              zoomControlsEnabled: false,
-              rotateGesturesEnabled: true,
-              scrollGesturesEnabled: true,
-              zoomGesturesEnabled: true,
-              tiltGesturesEnabled: true,
-              mapType: MapType.normal,
-              markers: Set<Marker>.from(controller.listMaker),
-              gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                Factory<OneSequenceGestureRecognizer>(
-                  () => EagerGestureRecognizer(),
-                ),
-              },
-              initialCameraPosition: controller.cameraPosition,
-              myLocationEnabled: true,
-              compassEnabled: false,
-              myLocationButtonEnabled: false,
-              trafficEnabled: false,
-              buildingsEnabled: true,
-              indoorViewEnabled: false,
-              liteModeEnabled: false,
-              minMaxZoomPreference: const MinMaxZoomPreference(10.0, 20.0),
-              cameraTargetBounds: CameraTargetBounds.unbounded,
-              onMapCreated: (GoogleMapController mapController) {
-                // Apply custom map style for clean, modern look
-                mapController.setMapStyle(
-                    Get.isDarkMode ? googleMapDarkTheme : googleMapLightTheme);
-                if (!controller.mapController.isCompleted) {
-                  controller.mapController.complete(mapController);
-                }
-              },
-              onCameraMove: (CameraPosition position) {
-                // Optional: Track camera movements for advanced features
-              },
-              onTap: (LatLng latLng) {
-                // Optional: Handle map taps
-              },
-            )),
+                  mapToolbarEnabled: false,
+                  zoomControlsEnabled: false,
+                  rotateGesturesEnabled: true,
+                  scrollGesturesEnabled: true,
+                  zoomGesturesEnabled: true,
+                  tiltGesturesEnabled: true,
+                  mapType: MapType.normal,
+                  markers: Set<Marker>.from(controller.listMaker),
+                  gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                    Factory<OneSequenceGestureRecognizer>(
+                      () => EagerGestureRecognizer(),
+                    ),
+                  },
+                  initialCameraPosition: controller.cameraPosition,
+                  myLocationEnabled: true,
+                  compassEnabled: false,
+                  myLocationButtonEnabled: false,
+                  trafficEnabled: false,
+                  buildingsEnabled: true,
+                  indoorViewEnabled: false,
+                  liteModeEnabled: false,
+                  minMaxZoomPreference: const MinMaxZoomPreference(10.0, 20.0),
+                  cameraTargetBounds: CameraTargetBounds.unbounded,
+                  onMapCreated: (GoogleMapController mapController) {
+                    // Apply custom map style for clean, modern look
+                    mapController.setMapStyle(Get.isDarkMode
+                        ? googleMapDarkTheme
+                        : googleMapLightTheme);
+                    if (!controller.mapController.isCompleted) {
+                      controller.mapController.complete(mapController);
+                    }
+                  },
+                  onCameraMove: (CameraPosition position) {
+                    // Optional: Track camera movements for advanced features
+                  },
+                  onTap: (LatLng latLng) {
+                    // Optional: Handle map taps
+                  },
+                )),
           ),
-          
+
           // Search bar at top with gradient shadow
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
@@ -136,7 +139,8 @@ class HomePage extends GetView<HomeController> {
                   child: Row(
                     children: [
                       const SizedBox(width: 16),
-                      Icon(Icons.search, color: Theme.of(context).primaryColor, size: 22),
+                      Icon(Icons.search,
+                          color: Theme.of(context).primaryColor, size: 22),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
@@ -146,7 +150,7 @@ class HomePage extends GetView<HomeController> {
                             border: InputBorder.none,
                             hintText: 'Search charging stations...',
                             hintStyle: TextStyle(
-                              color: Colors.grey.shade500, 
+                              color: Colors.grey.shade500,
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
                             ),
@@ -162,7 +166,8 @@ class HomePage extends GetView<HomeController> {
                       Container(
                         margin: const EdgeInsets.only(right: 8),
                         child: Material(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
@@ -180,8 +185,8 @@ class HomePage extends GetView<HomeController> {
                             child: Padding(
                               padding: const EdgeInsets.all(8),
                               child: Icon(
-                                Icons.tune, 
-                                color: Theme.of(context).primaryColor, 
+                                Icons.tune,
+                                color: Theme.of(context).primaryColor,
                                 size: 20,
                               ),
                             ),
@@ -194,17 +199,18 @@ class HomePage extends GetView<HomeController> {
               ),
             ),
           ),
-          
+
           // Station info card at bottom with separate Obx
           Obx(() {
-            final selectedStation = controller.selectedStation.value;
-            
+            final selectedStation = controller.selectedStation.value ??
+                controller.listParkSlot.value.data?.first;
+
             if (selectedStation == null) return const SizedBox.shrink();
-            
+
             return Positioned(
               left: 0,
               right: 0,
-              bottom: 100, // Increased to avoid bottom navigation
+              bottom: 0, // Increased to avoid bottom navigation
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
                 child: Material(
@@ -250,7 +256,7 @@ class HomePage extends GetView<HomeController> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      selectedStation.nameParking ?? "Station Name",
+                                      selectedStation.nameParking!,
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -261,9 +267,10 @@ class HomePage extends GetView<HomeController> {
                                     Row(
                                       children: [
                                         Text(
-                                          "${selectedStation.distance?.toStringAsFixed(1) ?? "0"} km away",
+                                          "${selectedStation.distance?.toStringAsFixed(1) ?? "0"} km",
                                           style: TextStyle(
-                                            color: Theme.of(context).primaryColor,
+                                            color:
+                                                Theme.of(context).primaryColor,
                                             fontWeight: FontWeight.w600,
                                             fontSize: 14,
                                           ),
@@ -287,7 +294,8 @@ class HomePage extends GetView<HomeController> {
                                 borderRadius: BorderRadius.circular(20),
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(20),
-                                  onTap: () => controller.clearSelectedStation(),
+                                  onTap: () =>
+                                      controller.clearSelectedStation(),
                                   child: const Padding(
                                     padding: EdgeInsets.all(8),
                                     child: Icon(
@@ -301,7 +309,9 @@ class HomePage extends GetView<HomeController> {
                               const SizedBox(width: 8),
                               // Navigation button
                               Material(
-                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(16),
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
@@ -319,7 +329,7 @@ class HomePage extends GetView<HomeController> {
                             ],
                           ),
                         ),
-                        
+
                         // Station stats
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -338,7 +348,7 @@ class HomePage extends GetView<HomeController> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      "Plugs Available",
+                                      TKeys.machine_availiable.translate(),
                                       style: TextStyle(
                                         color: Colors.grey.shade600,
                                         fontSize: 14,
@@ -380,14 +390,14 @@ class HomePage extends GetView<HomeController> {
               ),
             );
           }),
-            
+
           // My location button with separate Obx
           Obx(() {
             final stations = controller.listParkSlot.value.data ?? [];
             final hasStation = stations.isNotEmpty;
-            
+
             return Positioned(
-              bottom: hasStation ? 300 : 200, // Adjusted for bottom navigation
+              bottom: hasStation ? 200 : 200, // Adjusted for bottom navigation
               right: 20,
               child: Container(
                 decoration: BoxDecoration(
@@ -428,7 +438,7 @@ class HomePage extends GetView<HomeController> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(
-                        Icons.my_location_rounded, 
+                        Icons.my_location_rounded,
                         color: Colors.white,
                         size: 24,
                       ),
@@ -444,236 +454,9 @@ class HomePage extends GetView<HomeController> {
 
     return Scaffold(
       key: sliderDrawerKey,
-      drawer: Container(
-        width: MediaQuery.of(context).size.width * 0.85,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Colors.grey.shade50,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: _SliderView(
-          onItemClick: (title) async {
-            sliderDrawerKey.currentState!.closeDrawer();
-            controller.isOpenDrawer = false;
-            switch (title) {
-              case MenuEnum.profile:
-                await Get.toNamed("/profile");
-                final GoogleMapController controller2 =
-                    await controller.mapController.future;
-                controller2.setMapStyle(
-                    Get.isDarkMode ? googleMapDarkTheme : googleMapLightTheme);
-                controller.update();
-                break;
-              case MenuEnum.history:
-                Get.toNamed("/list_booking");
-                break;
-              case MenuEnum.notification:
-                Get.toNamed("/notification");
-                break;
-              case MenuEnum.logOut:
-                showDialogCustom(context, () async {
-                  EasyLoading.show();
-                  await controller.letLogout();
-                  Get.offAllNamed("/login");
-                  EasyLoading.dismiss();
-                }, question: TKeys.sign_out.translate());
-                break;
-              case MenuEnum.vipMember:
-                Get.toNamed("/member_code");
-                break;
-
-              case MenuEnum.search:
-                break;
-              case MenuEnum.payment:
-                break;
-            }
-          },
-        ),
-      ),
       body: buildBody(context, sliderDrawerKey),
       bottomNavigationBar: _ModernBottomNavigationBar(),
     );
-  }
-}
-
-class _SliderView extends StatelessWidget {
-  final Function(MenuEnum)? onItemClick;
-  const _SliderView({Key? key, this.onItemClick}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GetBuilder(
-        init: HomeController(),
-        builder: (controller) {
-          return Obx(() => Container(
-                decoration: const BoxDecoration(
-                  color: Colors.transparent,
-                ),
-                child: SafeArea(
-                  child: Column(
-                    children: <Widget>[
-                      // Header Section with User Info
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Theme.of(context).primaryColor,
-                              Theme.of(context).primaryColor.withOpacity(0.8),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(32),
-                            bottomRight: Radius.circular(32),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            // Profile Avatar
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: ((controller.userModel.value.imagesPaths ?? "") != "")
-                                    ? Image.memory(
-                                        width: 80.0,
-                                        height: 80.0,
-                                        base64Decode(controller.userModel.value.imagesPaths ?? ""),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Image.asset(
-                                        "assets/images/user.png",
-                                        fit: BoxFit.cover,
-                                        width: 80.0,
-                                        height: 80.0,
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            // User Name
-                            Text(
-                              controller.userModel.value.fullName ?? "Guest User",
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            // VIP Status
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Image.asset(
-                                    "assets/images/vip.png",
-                                    width: 20,
-                                    height: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    "${controller.userModel.value.countVIP ?? 0} VIP Points",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Menu Items
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                          child: Column(
-                            children: [
-                              ...[
-                                Menu(Icons.search_rounded, TKeys.search.translate(), MenuEnum.search),
-                                Menu(Icons.history_rounded, TKeys.history.translate(), MenuEnum.history),
-                                Menu(Icons.notifications_rounded, TKeys.notification.translate(), MenuEnum.notification),
-                                Menu(Icons.person_rounded, TKeys.profile.translate(), MenuEnum.profile),
-                              ].map((menu) => _ModernSliderMenuItem(
-                                title: menu,
-                                iconData: menu.iconData,
-                                onTap: onItemClick,
-                              )).toList(),
-                              
-                              const Spacer(),
-                              
-                              // Logout Button
-                              Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.red.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: _ModernSliderMenuItem(
-                                  title: Menu(Icons.logout_rounded, TKeys.sign_out.translate(), MenuEnum.logOut),
-                                  iconData: Icons.logout_rounded,
-                                  onTap: onItemClick,
-                                  isLogout: true,
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 16),
-                              
-                              // App Version
-                              Text(
-                                "NextEnergy v1.0.1",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade500,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 16),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ));
-        });
   }
 }
 
@@ -728,14 +511,14 @@ class _ModernSliderMenuItem extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isLogout 
+                    color: isLogout
                         ? Colors.red.withOpacity(0.1)
                         : Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     iconData,
-                    color: isLogout 
+                    color: isLogout
                         ? Colors.red.shade600
                         : Theme.of(context).primaryColor,
                     size: 22,
@@ -748,18 +531,14 @@ class _ModernSliderMenuItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isLogout 
-                          ? Colors.red.shade600
-                          : Colors.black87,
+                      color: isLogout ? Colors.red.shade600 : Colors.black87,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,
-                  color: isLogout 
-                      ? Colors.red.shade400
-                      : Colors.grey.shade400,
+                  color: isLogout ? Colors.red.shade400 : Colors.grey.shade400,
                 ),
               ],
             ),
@@ -774,7 +553,6 @@ class _ModernBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.only(
@@ -802,26 +580,25 @@ class _ModernBottomNavigationBar extends StatelessWidget {
             children: [
               _BottomNavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: TKeys.home.translate(),
                 isActive: true,
                 onTap: () {},
               ),
-            
               _BottomNavItem(
-                icon: Icons.electric_bolt_rounded,
-                label: 'Charging',
+                icon: Icons.qr_code_rounded,
+                label: TKeys.scan_qr.translate(),
                 isActive: false,
                 onTap: () {},
               ),
               _BottomNavItem(
                 icon: Icons.history_rounded,
-                label: 'History',
+                label: TKeys.history.translate(),
                 isActive: false,
                 onTap: () => Get.toNamed("/list_booking"),
               ),
               _BottomNavItem(
                 icon: Icons.person_rounded,
-                label: 'Profile',
+                label: TKeys.profile.translate(),
                 isActive: false,
                 onTap: () => Get.toNamed("/profile"),
               ),
@@ -855,7 +632,7 @@ class _BottomNavItem extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive 
+          color: isActive
               ? Theme.of(context).primaryColor.withOpacity(0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -867,16 +644,14 @@ class _BottomNavItem extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isActive 
+                color: isActive
                     ? Theme.of(context).primaryColor
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: isActive 
-                    ? Colors.white
-                    : Colors.grey.shade500,
+                color: isActive ? Colors.white : Colors.grey.shade500,
                 size: 24,
               ),
             ),
@@ -886,7 +661,7 @@ class _BottomNavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive 
+                color: isActive
                     ? Theme.of(context).primaryColor
                     : Colors.grey.shade500,
               ),

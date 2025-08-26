@@ -86,10 +86,6 @@ get pageList => [
           page: () => const ProfileDetailPage(),
           binding: ProfileDetailBind()),
       GetPage(
-          name: '/payment',
-          page: () => Payment3DSPage(),
-          binding: Payment3dsBind()),
-      GetPage(
           name: '/profile_change_pass',
           page: () => const ProfileChangePassPage(),
           binding: ProfileChangePassBind()),

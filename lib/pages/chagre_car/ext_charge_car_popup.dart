@@ -93,48 +93,48 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                       }
                     } else {
                       //--------------------------------------------------- thanh toán visa
-                      var result = await Get.dialog(
-                        const Payment3DSPage(),
-                        arguments: PaymentDtoModel(
-                            controller.bleResponseModel?.myId ??
-                                controller.bookingData!.hardwareID!,
-                            item.priceID!,
-                            controller.bookingData?.bookID,
-                            true,
-                            timeNow: 0),
-                        barrierDismissible: false,
-                      );
+                      // var result = await Get.dialog(
+                      //   const Payment3DSPage(),
+                      //   arguments: PaymentDtoModel(
+                      //       controller.bleResponseModel?.myId ??
+                      //           controller.bookingData!.hardwareID!,
+                      //       item.priceID!,
+                      //       controller.bookingData?.bookID,
+                      //       true,
+                      //       timeNow: 0),
+                      //   barrierDismissible: false,
+                      // );
 
-                      if (result != null &&
-                          (result as ResponseBase<PaymentModel>?) != null) {
-                        /// Thanh toán thành công
+                      // if (result != null &&
+                      //     (result as ResponseBase<PaymentModel>?) != null) {
+                      //   /// Thanh toán thành công
 
-                        // Bật thiết bị lên
-                        await controller.onUpdatePayment(1,
-                            paymentID: result!.data!.paymentID!); // thành công
+                      //   // Bật thiết bị lên
+                      //   await controller.onUpdatePayment(1,
+                      //       paymentID: result!.data!.paymentID!); // thành công
 
-                        await controller
-                            .extTimeHardware(item.priceTime)
-                            .then((isOK) async {
-                          if (isOK) {
-                            // cập nhật and update time
-                            var responseNewTime =
-                                await controller.onUpdateAffterHardware(1,
-                                    isExtTime: true,
-                                    paymentID:
-                                        result.data!.paymentID); // thành công
-                            if (responseNewTime != null &&
-                                responseNewTime.data != null) {
-                              controller.setPaymentData(responseNewTime);
-                            }
-                          } else {
-                            // reject booking
-                            await controller.onUpdateAffterHardware(-1,
-                                isExtTime: true,
-                                paymentID: result.data!.paymentID); // thất bại
-                          }
-                        });
-                      }
+                      //   await controller
+                      //       .extTimeHardware(item.priceTime)
+                      //       .then((isOK) async {
+                      //     if (isOK) {
+                      //       // cập nhật and update time
+                      //       var responseNewTime =
+                      //           await controller.onUpdateAffterHardware(1,
+                      //               isExtTime: true,
+                      //               paymentID:
+                      //                   result.data!.paymentID); // thành công
+                      //       if (responseNewTime != null &&
+                      //           responseNewTime.data != null) {
+                      //         controller.setPaymentData(responseNewTime);
+                      //       }
+                      //     } else {
+                      //       // reject booking
+                      //       await controller.onUpdateAffterHardware(-1,
+                      //           isExtTime: true,
+                      //           paymentID: result.data!.paymentID); // thất bại
+                      //     }
+                      //   });
+                      // }
                       controller.onInitExtBooking();
                     }
                   }),
