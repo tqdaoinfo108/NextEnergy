@@ -344,7 +344,7 @@ class ChargeCarController extends GetxControllerCustom
           .convert(utf8.encode(nameDevice.substring(5, 8)))
           .toString()
           .substring(10, 22);
-      List<int> bytes = utf8.encode('7f10ba493531');
+      List<int> bytes = utf8.encode(authenValue);
 
       print("🔐 Sending auth value: $authenValue");
       print("🔐 Device name: $nameDevice");
