@@ -238,17 +238,19 @@ class ChargeCarController extends GetxControllerCustom
   }
 
   // Helper method để write với error handling và verification
-  Future<bool> writeWithVerification(BluetoothCharacteristic characteristic, List<int> data, String commandName) async {
+  Future<bool> writeWithVerification(BluetoothCharacteristic characteristic,
+      List<int> data, String commandName) async {
     try {
       print("📤 Sending $commandName: ${utf8.decode(data)}");
       print("📤 Bytes: $data");
-      
+
       // Kiểm tra characteristic properties
-      if (!characteristic.properties.write && !characteristic.properties.writeWithoutResponse) {
+      if (!characteristic.properties.write &&
+          !characteristic.properties.writeWithoutResponse) {
         print("❌ Characteristic doesn't support write operations");
         return false;
       }
-      
+
       // Gửi dữ liệu
       if (characteristic.properties.write) {
         await characteristic.write(data, withoutResponse: false);
@@ -257,7 +259,7 @@ class ChargeCarController extends GetxControllerCustom
         await characteristic.write(data, withoutResponse: true);
         print("✅ $commandName sent without response");
       }
-      
+
       return true;
     } catch (e) {
       print("❌ Failed to send $commandName: $e");
@@ -267,7 +269,8 @@ class ChargeCarController extends GetxControllerCustom
   }
 
   // Helper method để read với error handling
-  Future<String?> readWithErrorHandling(BluetoothCharacteristic characteristic, {int retryCount = 2}) async {
+  Future<String?> readWithErrorHandling(BluetoothCharacteristic characteristic,
+      {int retryCount = 2}) async {
     for (int i = 0; i < retryCount; i++) {
       try {
         var data = await characteristic.read();
@@ -305,15 +308,19 @@ class ChargeCarController extends GetxControllerCustom
       for (int i = discoverServices.length - 1; i >= 0; i--) {
         var service = discoverServices[i];
         print("🔍 Checking service ${i}: ${service.uuid}");
-        print("🔍 Service has ${service.characteristics.length} characteristics");
+        print(
+            "🔍 Service has ${service.characteristics.length} characteristics");
 
         var characteristics = service.characteristics.where(
             (element) => element.properties.read && element.properties.write);
-        
+
         for (var item in characteristics) {
-          print("✅ Found suitable characteristic in custom service: ${item.uuid}");
-          print("📝 Properties - Read: ${item.properties.read}, Write: ${item.properties.write}, WriteWithoutResponse: ${item.properties.writeWithoutResponse}");
-          print("🎯 Using characteristic from custom service (index $i): ${item.uuid}");
+          print(
+              "✅ Found suitable characteristic in custom service: ${item.uuid}");
+          print(
+              "📝 Properties - Read: ${item.properties.read}, Write: ${item.properties.write}, WriteWithoutResponse: ${item.properties.writeWithoutResponse}");
+          print(
+              "🎯 Using characteristic from custom service (index $i): ${item.uuid}");
           return item;
         }
       }
@@ -359,14 +366,14 @@ class ChargeCarController extends GetxControllerCustom
       }
 
       await Future.delayed(const Duration(seconds: 2)); // Tăng thời gian chờ
-      
+
       String? rawValue = await readWithErrorHandling(c);
       if (rawValue == null) {
         print("❌ Failed to read response from ESP32");
         EasyLoading.showError("Không thể đọc phản hồi từ thiết bị");
         return;
       }
-      
+
       print("📡 Received from ESP32: '$rawValue'");
       print("📡 Expected auth value: '$authenValue'");
 
@@ -460,7 +467,7 @@ class ChargeCarController extends GetxControllerCustom
       String onCommand =
           "ON:${getTimeOpenHardware()}:${DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000}:${bookingData!.bookID}";
       List<int> bytes = utf8.encode(onCommand);
-      
+
       bool writeSuccess = await writeWithVerification(c, bytes, "ON");
       if (!writeSuccess) {
         return false;
@@ -477,24 +484,30 @@ class ChargeCarController extends GetxControllerCustom
         String? rawValue = await readWithErrorHandling(c, retryCount: 1);
         if (rawValue == null) {
           print("❌ Failed to read response for iteration $i");
-          continue;
-        }
-        
-        print("📡 Reading response for iteration $i: '$rawValue'");
-        
-        if ("true" == rawValue.toLowerCase()) {
-          var isUpdateComplete = await onUpdateAffterHardware(1); // thành công
-          if (isUpdateComplete != null && isUpdateComplete.data != null) {
-            List<int> bytesPAID = utf8.encode("PAID");
-            
-            bool paidSuccess = await writeWithVerification(c, bytesPAID, "PAID");
-            if (paidSuccess) {
-              onInitWhenBookingExist();
-              pageEnum.value = ChargeCarPageEnum.CHARGING;
-              isResult = true;
-              break;
+        } else {
+          print("📡 Reading response for iteration $i: '$rawValue'");
+
+          if ("true" == rawValue.toLowerCase()) {
+            var isUpdateComplete =
+                await onUpdateAffterHardware(1); // thành công
+            if (isUpdateComplete != null && isUpdateComplete.data != null) {
+              List<int> bytesPAID = utf8.encode("PAID");
+
+              bool paidSuccess =
+                  await writeWithVerification(c, bytesPAID, "PAID");
+              if (paidSuccess) {
+                onInitWhenBookingExist();
+                pageEnum.value = ChargeCarPageEnum.CHARGING;
+                isResult = true;
+                break;
+              }
             }
           }
+        }
+
+        // Chờ 1 giây trước khi đọc lần tiếp theo
+        if (i < expiredTimeValue) {
+          await Future.delayed(const Duration(seconds: 1));
         }
       }
     } catch (e) {
@@ -515,7 +528,7 @@ class ChargeCarController extends GetxControllerCustom
       }
       var characteristic = (await findBluetoothCharacteristic())!;
       var bytes2 = utf8.encode("OFF");
-      
+
       await writeWithVerification(characteristic, bytes2, "OFF");
 
       await Future.delayed(const Duration(milliseconds: 500));
@@ -788,7 +801,8 @@ class ChargeCarController extends GetxControllerCustom
   void handlePageReappear() {
     print('ChargeCarController: Page reappeared, checking Bluetooth status');
     if (!isConnectedDevice) {
-      print('ChargeCarController: Bluetooth not connected, attempting auto-reconnect');
+      print(
+          'ChargeCarController: Bluetooth not connected, attempting auto-reconnect');
       enableBluetoothAndReconnect();
     }
   }
@@ -796,8 +810,9 @@ class ChargeCarController extends GetxControllerCustom
   // Bật Bluetooth và reconnect
   Future<void> enableBluetoothAndReconnect() async {
     try {
-      print('ChargeCarController: Starting Bluetooth enable and reconnect process');
-      
+      print(
+          'ChargeCarController: Starting Bluetooth enable and reconnect process');
+
       // Kiểm tra và bật Bluetooth
       bool isEnabled = await FlutterBluePlus.isOn;
       if (!isEnabled) {
@@ -805,12 +820,14 @@ class ChargeCarController extends GetxControllerCustom
         await FlutterBluePlus.turnOn();
         await Future.delayed(Duration(seconds: 2)); // Đợi Bluetooth khởi động
       }
-      
+
       // Thử reconnect bằng cách scan lại thiết bị
-      print('ChargeCarController: Attempting to reconnect to device: $nameDevice');
+      print(
+          'ChargeCarController: Attempting to reconnect to device: $nameDevice');
       await connectDevice();
     } catch (e) {
-      print('ChargeCarController: Error during Bluetooth enable and reconnect: $e');
+      print(
+          'ChargeCarController: Error during Bluetooth enable and reconnect: $e');
     }
   }
 }

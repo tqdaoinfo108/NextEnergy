@@ -3,8 +3,6 @@ import 'package:v2/pages/booking/booking_controller.dart';
 import 'package:v2/pages/booking/booking_page.dart';
 import 'package:v2/pages/chagre_car/charge_car_controller.dart';
 import 'package:v2/pages/chagre_car/charge_car_page.dart';
-import 'package:v2/pages/home/home_controller.dart';
-import 'package:v2/pages/home/home_page.dart';
 import 'package:v2/pages/login/login_controller.dart';
 import 'package:v2/pages/login/login_page.dart';
 import 'package:v2/pages/login_update/login_update_controller.dart';
@@ -17,7 +15,6 @@ import 'package:v2/pages/notification/notification_page.dart';
 import 'package:v2/pages/otp/otp_controller.dart';
 import 'package:v2/pages/otp/otp_page.dart';
 import 'package:v2/pages/payment/payment_3ds_confirm_page.dart';
-import 'package:v2/pages/payment/payment_form.dart';
 import 'package:v2/pages/payment/payment_list.dart';
 import 'package:v2/pages/pin_auth/pin_auth_page.dart';
 import 'package:v2/pages/profile/profile_page.dart';
@@ -100,10 +97,7 @@ get pageList => [
           binding: MemberCodeBind()),
       GetPage(name: '/no_internet', page: () => const NoInternetPage()),
       GetPage(name: '/payment_list', page: () => const PaymentListPage()),
-      GetPage(
-          name: '/payment_form',
-          page: () => PaymentFormPage(),
-          binding: PaymentFormBind()),
+    
       GetPage(name: '/pin_code_form', page: () => const PinAuthPage()),
       GetPage(
           name: '/session_device',

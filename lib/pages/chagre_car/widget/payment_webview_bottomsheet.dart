@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:v2/services/localization_service.dart';
@@ -23,11 +24,48 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
   late WebViewController controller;
   bool isLoading = true;
   bool canGoBack = false;
+  Timer? _checkTimer;
 
   @override
   void initState() {
     super.initState();
     _initializeWebView();
+    _startPaymentCheck();
+  }
+
+  @override
+  void dispose() {
+    _checkTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPaymentCheck() {
+    _checkTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _checkPaymentSuccess();
+    });
+  }
+
+  Future<void> _checkPaymentSuccess() async {
+    try {
+      final result = await controller.runJavaScriptReturningResult(
+          'document.body.innerText || document.body.textContent || ""');
+
+      String pageContent = result.toString().toLowerCase();
+      debugPrint('Checking page content for payment success...');
+
+      if (pageContent.contains('thanh toán thành công') ||
+          pageContent.contains('payment success') ||
+          pageContent.contains('thanh toan thanh cong')) {
+        debugPrint('Payment success detected in page content');
+        _checkTimer?.cancel();
+        widget.onPaymentComplete();
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking payment status: $e');
+    }
   }
 
   void _initializeWebView() {
@@ -45,29 +83,35 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
             });
           },
           onPageFinished: (String url) {
+            debugPrint('WebView finished loading: $url');
+
             setState(() {
               isLoading = false;
             });
             _updateCanGoBack();
+            // Kiểm tra ngay khi trang load xong
+            _checkPaymentSuccess();
           },
           onWebResourceError: (WebResourceError error) {
             // Handle error
             debugPrint('WebView error: ${error.description}');
           },
           onNavigationRequest: (NavigationRequest request) {
+            debugPrint('WebView finished loading: ${request.url}');
+
             // Check if payment is completed based on URL patterns
             if (_isPaymentCompleteUrl(request.url)) {
               widget.onPaymentComplete();
               Navigator.of(context).pop(true);
               return NavigationDecision.prevent;
             }
-            
+
             if (_isPaymentCancelledUrl(request.url)) {
               widget.onPaymentCancelled?.call();
               Navigator.of(context).pop(false);
               return NavigationDecision.prevent;
             }
-            
+
             return NavigationDecision.navigate;
           },
         ),
@@ -78,16 +122,16 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
   bool _isPaymentCompleteUrl(String url) {
     // Add your payment completion URL patterns here
     // Example: return url.contains('payment-success') || url.contains('completed');
-    return url.contains('success') || 
-           url.contains('completed') || 
-           url.contains('payment-complete');
+    return url.contains('success') ||
+        url.contains('completed') ||
+        url.contains('payment-complete');
   }
 
   bool _isPaymentCancelledUrl(String url) {
     // Add your payment cancellation URL patterns here
-    return url.contains('cancel') || 
-           url.contains('cancelled') || 
-           url.contains('payment-cancel');
+    return url.contains('cancel') ||
+        url.contains('cancelled') ||
+        url.contains('payment-cancel');
   }
 
   Future<void> _updateCanGoBack() async {
@@ -103,33 +147,38 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
       return false;
     } else {
       // Show confirmation dialog
-      return await _showExitConfirmation();
+      final shouldExit = await _showExitConfirmation();
+      if (shouldExit) {
+        _checkTimer?.cancel();
+      }
+      return shouldExit;
     }
   }
 
   Future<bool> _showExitConfirmation() async {
     return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(TKeys.notice.translate()),
-          content: Text('Bạn có chắc chắn muốn hủy thanh toán không?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Tiếp tục'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-                widget.onPaymentCancelled?.call();
-              },
-              child: Text('Hủy thanh toán'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(TKeys.notice.translate()),
+              content: Text('Bạn có chắc chắn muốn hủy thanh toán không?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text('Tiếp tục'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                    widget.onPaymentCancelled?.call();
+                  },
+                  child: Text('Hủy thanh toán'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   @override
@@ -165,7 +214,10 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
                   IconButton(
                     onPressed: () async {
                       if (await _showExitConfirmation()) {
-                        Navigator.of(context).pop(false);
+                        _checkTimer?.cancel();
+                        if (mounted) {
+                          Navigator.of(context).pop(false);
+                        }
                       }
                     },
                     icon: const Icon(Icons.close),
@@ -173,16 +225,15 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
                 ],
               ),
             ),
-            
+
             // Loading indicator
-            if (isLoading)
-              const LinearProgressIndicator(),
-            
+            if (isLoading) const LinearProgressIndicator(),
+
             // WebView
             Expanded(
               child: WebViewWidget(controller: controller),
             ),
-            
+
             // Bottom navigation
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -211,7 +262,10 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
                   TextButton(
                     onPressed: () async {
                       if (await _showExitConfirmation()) {
-                        Navigator.of(context).pop(false);
+                        _checkTimer?.cancel();
+                        if (mounted) {
+                          Navigator.of(context).pop(false);
+                        }
                       }
                     },
                     child: const Text('Hủy'),
