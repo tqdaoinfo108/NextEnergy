@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:bottom_sheet/bottom_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -8,7 +6,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:v2/pages/customs/dialog_custom.dart';
+import 'package:map_launcher/map_launcher.dart' as MapLauncher;
 import 'package:v2/pages/home/home_bottom_sheet.dart';
 import 'package:v2/pages/home/home_controller.dart';
 import 'package:v2/services/localization_service.dart';
@@ -95,101 +93,98 @@ class HomePage extends GetView<HomeController> {
                 )),
           ),
 
-          // Search bar at top with gradient shadow
+          // Enhanced search bar with modern design
           Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 20,
-            right: 20,
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            right: 16,
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withOpacity(0.08),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 40,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: Material(
                 elevation: 0,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
+                clipBehavior: Clip.antiAlias,
                 child: Container(
-                  height: 48,
+                  height: 52,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
                         Colors.white,
-                        Colors.white.withOpacity(0.95),
+                        Colors.white.withOpacity(0.98),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.grey.withOpacity(0.1),
-                      width: 1,
+                      color: Colors.grey.withOpacity(0.08),
+                      width: 1.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: Row(
                     children: [
+                      const SizedBox(width: 20),
+                      // Enhanced search icon with background
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(
+                          Icons.search_rounded,
+                          color: Theme.of(context).primaryColor,
+                          size: 22,
+                        ),
+                      ),
                       const SizedBox(width: 16),
-                      Icon(Icons.search,
-                          color: Theme.of(context).primaryColor, size: 22),
-                      const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
                           onTap: () => showSheet(),
                           readOnly: true,
+                          textAlignVertical: TextAlignVertical.center,
                           decoration: InputDecoration(
                             border: InputBorder.none,
-                            hintText: 'Search charging stations...',
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            hintText: TKeys.find_an_ev_charger.translate(),
                             hintStyle: TextStyle(
                               color: Colors.grey.shade500,
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
+                              letterSpacing: 0.2,
                             ),
                             isDense: true,
+                            contentPadding: EdgeInsets.zero,
                           ),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        child: Material(
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () {
-                              if (sliderDrawerKey.currentState!.isDrawerOpen) {
-                                sliderDrawerKey.currentState!.closeDrawer();
-                                controller.isOpenDrawer = false;
-                              } else {
-                                controller.isOpenDrawer = true;
-                                sliderDrawerKey.currentState!.openDrawer();
-                              }
-                              controller.getProfile();
-                              controller.update();
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.tune,
-                                color: Theme.of(context).primaryColor,
-                                size: 20,
-                              ),
-                            ),
                           ),
                         ),
                       ),
@@ -202,20 +197,27 @@ class HomePage extends GetView<HomeController> {
 
           // Station info card at bottom with separate Obx
           Obx(() {
-            final selectedStation = controller.selectedStation.value ??
-                controller.listParkSlot.value.data?.first;
+            final selectedStation = controller.selectedStation.value;
+            
+            // Only show if we have a station selected
+            if (selectedStation == null) {
+              return Container();
+            }
 
-            if (selectedStation == null) return const SizedBox.shrink();
-
-            return Positioned(
+            return AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutBack,
               left: 0,
               right: 0,
-              bottom: 0, // Increased to avoid bottom navigation
+              bottom: 0,
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
                 child: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(24),
+                  elevation: 12,
+                  borderRadius: BorderRadius.circular(28),
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -226,21 +228,21 @@ class HomePage extends GetView<HomeController> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withOpacity(0.08),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, -5),
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 24,
+                          offset: const Offset(0, -8),
                         ),
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 40,
-                          offset: const Offset(0, -10),
+                          color: Theme.of(context).primaryColor.withOpacity(0.08),
+                          blurRadius: 32,
+                          offset: const Offset(0, -12),
                         ),
                       ],
                     ),
@@ -248,34 +250,90 @@ class HomePage extends GetView<HomeController> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                          padding: const EdgeInsets.fromLTRB(24, 24, 20, 16),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      selectedStation.nameParking!,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
                                     Row(
                                       children: [
+                                        Expanded(
+                                          child: Text(
+                                            selectedStation.nameParking ?? "Station Name",
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                              letterSpacing: -0.5,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: (selectedStation.powerSocketAvailable ?? 0) > 0 
+                                                ? const Color(0xFF10B981).withOpacity(0.1)
+                                                : Colors.red.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: 6,
+                                                height: 6,
+                                                decoration: BoxDecoration(
+                                                  color: (selectedStation.powerSocketAvailable ?? 0) > 0 
+                                                      ? const Color(0xFF10B981)
+                                                      : Colors.red,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                (selectedStation.powerSocketAvailable ?? 0) > 0 ? TKeys.available.translate() : TKeys.close.translate(),
+                                                style: TextStyle(
+                                                  color: (selectedStation.powerSocketAvailable ?? 0) > 0 
+                                                      ? const Color(0xFF10B981)
+                                                      : Colors.red,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.location_on_rounded,
+                                          size: 16,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                        const SizedBox(width: 4),
                                         Text(
-                                          "${selectedStation.distance?.toStringAsFixed(1) ?? "0"} km",
+                                          "${selectedStation.distance?.toStringAsFixed(1) ?? "0"} km away",
                                           style: TextStyle(
-                                            color:
-                                                Theme.of(context).primaryColor,
+                                            color: Theme.of(context).primaryColor,
                                             fontWeight: FontWeight.w600,
                                             fontSize: 14,
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
+                                        const SizedBox(width: 16),
+                                        Icon(
+                                          Icons.access_time_rounded,
+                                          size: 16,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        const SizedBox(width: 4),
                                         Text(
                                           "24/7 Open",
                                           style: TextStyle(
@@ -288,98 +346,356 @@ class HomePage extends GetView<HomeController> {
                                   ],
                                 ),
                               ),
-                              // Close button
-                              Material(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(20),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(20),
-                                  onTap: () =>
-                                      controller.clearSelectedStation(),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: Icon(
-                                      Icons.close,
-                                      color: Colors.grey,
-                                      size: 20,
+                              // Close button with improved design
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+                                    onTap: () => controller.clearSelectedStation(),
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        color: Colors.grey,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              // Navigation button
-                              Material(
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(16),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () {},
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Icon(
-                                      Icons.navigation,
-                                      color: Theme.of(context).primaryColor,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ),
-                              )
+                              
                             ],
                           ),
                         ),
 
-                        // Station stats
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      "${selectedStation.powerSocketAvailable ?? 0}",
-                                      style: const TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
+                        // Station stats with improved responsive design
+                        Container(
+                          margin: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width * 0.04,
+                            vertical: 8,
+                          ),
+                          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.grey.shade200,
+                              width: 1,
+                            ),
+                          ),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isSmallScreen = constraints.maxWidth < 300;
+                              final fontSize = isSmallScreen ? 20.0 : 28.0;
+                              final iconSize = isSmallScreen ? 20.0 : 24.0;
+                              final separatorHeight = isSmallScreen ? 40.0 : 60.0;
+                              
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                                          decoration: BoxDecoration(
+                                            color: (selectedStation.powerSocketAvailable ?? 0) > 0 
+                                                ? const Color(0xFF10B981).withOpacity(0.1)
+                                                : Colors.red.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Icon(
+                                            Icons.ev_station_rounded,
+                                            color: (selectedStation.powerSocketAvailable ?? 0) > 0 
+                                                ? const Color(0xFF10B981)
+                                                : Colors.red,
+                                            size: iconSize,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            "${selectedStation.powerSocketAvailable ?? 0}",
+                                            style: TextStyle(
+                                              fontSize: fontSize,
+                                              fontWeight: FontWeight.bold,
+                                              color: (selectedStation.powerSocketAvailable ?? 0) > 0 
+                                                  ? const Color(0xFF10B981)
+                                                  : Colors.red,
+                                              letterSpacing: -1,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          TKeys.machine_availiable.translate(),
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: isSmallScreen ? 11 : 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: separatorHeight,
+                                    color: Colors.grey.shade300,
+                                    margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 16),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Icon(
+                                            Icons.bolt_rounded,
+                                            color: Theme.of(context).primaryColor,
+                                            size: iconSize,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            "${selectedStation.powerSocketAvailable ?? 0}",
+                                            style: TextStyle(
+                                              fontSize: fontSize,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context).primaryColor,
+                                              letterSpacing: -1,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          TKeys.total_slot.translate(),
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: isSmallScreen ? 11 : 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                        
+                        // Action buttons (QR Code and Open Map) with responsive design
+                        Container(
+                          margin: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width * 0.04,
+                          ),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isSmallScreen = constraints.maxWidth < 320;
+                              final buttonHeight = isSmallScreen ? 48.0 : 56.0;
+                              final buttonSpacing = isSmallScreen ? 12.0 : 16.0;
+                              final iconSize = isSmallScreen ? 18.0 : 20.0;
+                              final fontSize = isSmallScreen ? 14.0 : 16.0;
+                              final borderRadius = isSmallScreen ? 24.0 : 28.0;
+                              final horizontalPadding = isSmallScreen ? 12.0 : 20.0;
+                              
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: buttonHeight,
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF10B981),
+                                            Color(0xFF059669),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(borderRadius),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF10B981).withOpacity(0.3),
+                                            blurRadius: isSmallScreen ? 12 : 20,
+                                            offset: Offset(0, isSmallScreen ? 4 : 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          onTap: () => Get.toNamed('/qrcode'),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                if (!isSmallScreen || constraints.maxWidth > 280) ...[
+                                                  Container(
+                                                    padding: const EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white.withOpacity(0.2),
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.qr_code_scanner_rounded,
+                                                      color: Colors.white,
+                                                      size: iconSize,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: isSmallScreen ? 8 : 12),
+                                                ] else ...[
+                                                  Icon(
+                                                    Icons.qr_code_scanner_rounded,
+                                                    color: Colors.white,
+                                                    size: iconSize,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                ],
+                                                Flexible(
+                                                  child: FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    child: Text(
+                                                      TKeys.scan_qr.translate(),
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: fontSize,
+                                                        fontWeight: FontWeight.w600,
+                                                        letterSpacing: 0.3,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      TKeys.machine_availiable.translate(),
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 14,
+                                  ),
+                                  SizedBox(width: buttonSpacing),
+                                  Expanded(
+                                    child: Container(
+                                      height: buttonHeight,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(borderRadius),
+                                        border: Border.all(
+                                          color: const Color(0xFF10B981),
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.05),
+                                            blurRadius: isSmallScreen ? 12 : 20,
+                                            offset: Offset(0, isSmallScreen ? 4 : 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          onTap: () async {
+                                            try {
+                                              EasyLoading.show(status: 'Đang bật bản đồ ...');
+                                              final availableMaps = await MapLauncher.MapLauncher.installedMaps;
+                                              if (availableMaps.isEmpty) {
+                                                EasyLoading.showError(
+                                                  TKeys.maps_app_not_found.translate(),
+                                                  duration: const Duration(seconds: 5)
+                                                );
+                                                return;
+                                              }
+                                              await availableMaps.first.showMarker(
+                                                coords: MapLauncher.Coords(
+                                                  selectedStation.getLatLng.latitude,
+                                                  selectedStation.getLatLng.longitude
+                                                ),
+                                                title: selectedStation.nameParking ?? "",
+                                              );
+                                              EasyLoading.dismiss();
+                                            } catch (e) {
+                                              EasyLoading.showError(
+                                                TKeys.maps_app_not_found.translate(),
+                                                duration: const Duration(seconds: 5)
+                                              );
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                if (!isSmallScreen || constraints.maxWidth > 280) ...[
+                                                  Container(
+                                                    padding: const EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF10B981).withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.navigation_rounded,
+                                                      color: const Color(0xFF10B981),
+                                                      size: iconSize,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: isSmallScreen ? 8 : 12),
+                                                ] else ...[
+                                                  Icon(
+                                                    Icons.navigation_rounded,
+                                                    color: const Color(0xFF10B981),
+                                                    size: iconSize,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                ],
+                                                Flexible(
+                                                  child: FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    child: Text(
+                                                      TKeys.open_map.translate(),
+                                                      style: TextStyle(
+                                                        color: const Color(0xFF10B981),
+                                                        fontSize: fontSize,
+                                                        fontWeight: FontWeight.w600,
+                                                        letterSpacing: 0.3,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    const Text(
-                                      "\$1.25",
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      "Charges / kWh",
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -393,11 +709,15 @@ class HomePage extends GetView<HomeController> {
 
           // My location button with separate Obx
           Obx(() {
-            final stations = controller.listParkSlot.value.data ?? [];
-            final hasStation = stations.isNotEmpty;
+            final selectedStation = controller.selectedStation.value;
+            final hasSelectedStation = selectedStation != null;
 
-            return Positioned(
-              bottom: hasStation ? 200 : 200, // Adjusted for bottom navigation
+            return AnimatedPositioned(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              bottom: hasSelectedStation
+                  ? 400 // Increased to accommodate enhanced station card
+                  : 20, // Adjusted based on station card visibility
               right: 20,
               child: Container(
                 decoration: BoxDecoration(
@@ -455,220 +775,6 @@ class HomePage extends GetView<HomeController> {
     return Scaffold(
       key: sliderDrawerKey,
       body: buildBody(context, sliderDrawerKey),
-      bottomNavigationBar: _ModernBottomNavigationBar(),
-    );
-  }
-}
-
-enum MenuEnum {
-  search,
-  history,
-  vipMember,
-  profile,
-  logOut,
-  notification,
-  payment
-}
-
-class Menu {
-  final IconData iconData;
-  final String title;
-  final MenuEnum menuEnum;
-  Menu(this.iconData, this.title, this.menuEnum);
-}
-
-class _ModernSliderMenuItem extends StatelessWidget {
-  final Menu title;
-  final IconData iconData;
-  final Function(MenuEnum)? onTap;
-  final bool isLogout;
-
-  const _ModernSliderMenuItem({
-    Key? key,
-    required this.title,
-    required this.iconData,
-    required this.onTap,
-    this.isLogout = false,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: isLogout ? Colors.red.withOpacity(0.05) : Colors.transparent,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => onTap?.call(title.menuEnum),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isLogout
-                        ? Colors.red.withOpacity(0.1)
-                        : Theme.of(context).primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    iconData,
-                    color: isLogout
-                        ? Colors.red.shade600
-                        : Theme.of(context).primaryColor,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isLogout ? Colors.red.shade600 : Colors.black87,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: isLogout ? Colors.red.shade400 : Colors.grey.shade400,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModernBottomNavigationBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 40,
-            offset: const Offset(0, -10),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _BottomNavItem(
-                icon: Icons.home_rounded,
-                label: TKeys.home.translate(),
-                isActive: true,
-                onTap: () {},
-              ),
-              _BottomNavItem(
-                icon: Icons.qr_code_rounded,
-                label: TKeys.scan_qr.translate(),
-                isActive: false,
-                onTap: () {},
-              ),
-              _BottomNavItem(
-                icon: Icons.history_rounded,
-                label: TKeys.history.translate(),
-                isActive: false,
-                onTap: () => Get.toNamed("/list_booking"),
-              ),
-              _BottomNavItem(
-                icon: Icons.person_rounded,
-                label: TKeys.profile.translate(),
-                isActive: false,
-                onTap: () => Get.toNamed("/profile"),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _BottomNavItem({
-    Key? key,
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? Theme.of(context).primaryColor
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: isActive ? Colors.white : Colors.grey.shade500,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive
-                    ? Theme.of(context).primaryColor
-                    : Colors.grey.shade500,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

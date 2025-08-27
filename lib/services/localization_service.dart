@@ -148,6 +148,22 @@ enum TKeys {
   server_busy,
   retry,
   field_format_invalid,
+  // Profile page keys
+  premium_member,
+  active_status,
+  manage_personal_information,
+  view_membership_details,
+  manage_payment_methods,
+  manage_connected_devices,
+  update_your_password,
+  choose_preferred_language,
+  switch_theme_mode,
+  danger_zone,
+  sign_out_from_account,
+  permanently_delete_account,
+  action_cannot_undone,
+  logout_confirmation,
+  delete_account_confirmation,
   unable_to_connect,
   create_booking_success,
   charging_order_completed,
@@ -263,7 +279,8 @@ enum TKeys {
   session_device,
   active,
   on_back_300s_message,
-  this_charger_is_out_of_order
+  this_charger_is_out_of_order,
+  total_slot
 }
 
 //TKeys.hello

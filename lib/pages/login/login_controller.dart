@@ -2,7 +2,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:phone_form_field/phone_form_field.dart';
 import 'package:v2/services/getxController.dart';
 
 import '../../model/response_base.dart';
@@ -11,7 +10,6 @@ import '../../services/base_hive.dart';
 import '../../services/https.dart';
 import '../../services/localization_service.dart';
 import '../../utils/const.dart';
-import 'widget/phone_controller_custom.dart';
 
 class LoginBind extends Bindings {
   @override
@@ -37,21 +35,16 @@ class LoginController extends GetxControllerCustom {
   var textForgetPasswordString = "Forget Password?".obs;
   var textConfirmString = "Confirm".obs;
   String phoneValue = "";
-  String areaCoutryCode = "";
+  String areaCoutryCode = "+84";
   String passwordValue = "";
-  PhoneControllerCustom phoneController = PhoneControllerCustom(
-      initialValue: const PhoneNumber(isoCode: IsoCode.VI, nsn: ""));
 
   LoginType typeRequestOTP = LoginType.none;
   late UserModel userModelResponse;
 
-  void onChangePhoneValue(PhoneNumber? s) {
-    phoneValue = s!.nsn;
-    if (phoneValue.startsWith('0') && phoneValue.length > 3) {
-      phoneValue = phoneValue.substring(1, phoneValue.length);
-    }
-    areaCoutryCode = s.countryCode;
-    phoneController = PhoneControllerCustom(initialValue: s);
+  void onChangePhoneValue(String s) {
+    phoneValue = s;
+    // Automatically add country code for Vietnam
+    areaCoutryCode = "84";
   }
 
   void onChangePasswordValue(String s) {
@@ -93,8 +86,11 @@ class LoginController extends GetxControllerCustom {
           } catch (e) {}
 
           HiveHelper.put(Constants.LAST_LOGIN, user.data!.lastLogin!);
+          HiveHelper.put(Constants.FULL_NAME, user.data!.fullName!);
+          HiveHelper.put(Constants.PHONE, user.data!.fullName!);
+          HiveHelper.put(Constants.AVARTA, user.data!.imagesPaths!);
           HiveHelper.put(
-              Constants.LANGUAGE_CODE, user.data!.languageCode ?? "ja");
+              Constants.LANGUAGE_CODE, user.data!.languageCode ?? "vi");
           Get.updateLocale(Locale(user.data!.languageCode ?? "vi", ""));
           HttpHelper.updateLanguageCode();
           return user;

@@ -1,26 +1,23 @@
 import 'dart:async';
 import 'dart:io';
-import 'utils/app_theme.dart';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:phone_form_field/phone_form_field.dart';
+import 'package:ultra_qr_scanner/ultra_qr_scanner.dart';
 import 'package:v2/routers/router.dart';
 import 'package:v2/services/https.dart';
 import 'package:v2/transactions/my_transactions.dart';
-import 'package:ultra_qr_scanner/ultra_qr_scanner.dart';
+
 import 'firebase_options.dart';
 import 'pages/customs/page_life_cycle.dart';
 import 'services/base_hive.dart';
-
-import 'package:firebase_messaging/firebase_messaging.dart';
-
-
 import 'utils/const.dart';
 import 'utils/app_theme.dart';
 
@@ -110,18 +107,23 @@ class _MyAppState extends State<MyApp> {
       },
       child: GetMaterialApp(
         locale: Locale(
-            HiveHelper.get(Constants.LANGUAGE_CODE, defaultvalue: "en"), ''),
+            HiveHelper.get(Constants.LANGUAGE_CODE, defaultvalue: "vi"), ''),
         builder: EasyLoading.init(),
         title: '',
         getPages: pageList,
         initialRoute: getInitialRoute,
         initialBinding: getInitialBinding,
         translations: MyTranslations(),
-        localizationsDelegates: const [...PhoneFieldLocalization.delegates],
         supportedLocales: const [
-          Locale('vi', ''),
-          Locale('en', ''),
+          Locale('vi', ''), // Vietnam
+          Locale('en', ''), // United States
         ],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        fallbackLocale: const Locale('vi', ''),
         theme: AppTheme.lightTheme,
         // Có thể bổ sung darkTheme nếu muốn, hoặc để mặc định
         themeMode: ThemeMode.light,
@@ -211,7 +213,7 @@ class NotificationController {
   static Future<void> createNewNotificationIos(RemoteMessage notify) async {
     bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
     if (!isAllowed) return;
-    var noti = notify.data!;
+    var noti = notify.data;
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
           id: notify.hashCode, // -1 is replaced by a random number

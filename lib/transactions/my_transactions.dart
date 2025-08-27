@@ -223,7 +223,24 @@ class MyTranslations extends Translations {
           "active": "Active",
           "on_back_300s_message":
               "Please complete the charging start operation within 5 minutes after reading the QR code. Return to the starting screen.",
-          "this_charger_is_out_of_order": "This charger is out of order."
+          "this_charger_is_out_of_order": "This charger is out of order.",
+          "total_slot": "Total slots",
+          // Profile page translations
+          "premium_member": "Premium Member",
+          "active_status": "Active",
+          "manage_personal_information": "Manage personal information",
+          "view_membership_details": "View membership details",
+          "manage_payment_methods": "Manage payment methods",
+          "manage_connected_devices": "Manage connected devices",
+          "update_your_password": "Update your password",
+          "choose_preferred_language": "Choose your preferred language",
+          "switch_theme_mode": "Switch between light and dark theme",
+          "danger_zone": "Danger Zone",
+          "sign_out_from_account": "Sign out from your account",
+          "permanently_delete_account": "Permanently delete your account",
+          "action_cannot_undone": "This action cannot be undone!",
+          "logout_confirmation": "Are you sure you want to sign out?",
+          "delete_account_confirmation": "Are you sure you want to delete your account?"
         },
         'vi': {
           "home": "Trang chủ",
@@ -411,7 +428,24 @@ class MyTranslations extends Translations {
           "session_device": "Lịch sử đăng nhập",
           "active": "Hoạt động",
           "on_back_300s_message": "Vui lòng hoàn thành thao tác bắt đầu sạc trong vòng 5 phút sau khi đọc mã QR. Trở về màn hình ban đầu.",
-          "this_charger_is_out_of_order": "Trạm sạc này đang hỏng."
+          "this_charger_is_out_of_order": "Trạm sạc này đang hỏng.",
+          "total_slot": "Tổng trạm sạc",
+          // Profile page translations
+          "premium_member": "Thành viên VIP",
+          "active_status": "Hoạt động",
+          "manage_personal_information": "Quản lý thông tin cá nhân",
+          "view_membership_details": "Xem chi tiết thành viên",
+          "manage_payment_methods": "Quản lý phương thức thanh toán",
+          "manage_connected_devices": "Quản lý thiết bị kết nối",
+          "update_your_password": "Cập nhật mật khẩu",
+          "choose_preferred_language": "Chọn ngôn ngữ ưa thích",
+          "switch_theme_mode": "Chuyển đổi giữa chế độ sáng và tối",
+          "danger_zone": "Vùng Nguy hiểm",
+          "sign_out_from_account": "Đăng xuất khỏi tài khoản",
+          "permanently_delete_account": "Xóa vĩnh viễn tài khoản",
+          "action_cannot_undone": "Hành động này không thể hoàn tác!",
+          "logout_confirmation": "Bạn có chắc chắn muốn đăng xuất?",
+          "delete_account_confirmation": "Bạn có chắc chắn muốn xóa tài khoản?"
         }
       };
 }

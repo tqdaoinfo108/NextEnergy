@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:phone_form_field/phone_form_field.dart';
-import 'package:v2/pages/customs/textfield_custom.dart';
 import 'package:v2/pages/login/login_controller.dart';
 import 'package:v2/services/localization_service.dart';
 
 import '../../model/response_base.dart';
 import '../../model/user_model.dart';
 import '../customs/appbar.dart';
-import '../customs/button.dart';
-import 'widget/phone_form_field_custom.dart';
 
 class LoginPage extends GetView<LoginController> {
   const LoginPage({Key? key}) : super(key: key);
@@ -18,36 +15,115 @@ class LoginPage extends GetView<LoginController> {
   @override
   Widget build(BuildContext context) {
     final formKey = GlobalKey<FormState>(debugLabel: '_childWidgetKey3');
+    final phoneController = TextEditingController();
+    
     return Obx(() => Scaffold(
+          backgroundColor: Colors.grey.shade50,
           appBar: !controller.isLogin.value
               ? AppBarCustom(
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  leading: IconButton(
-                    onPressed: () {
-                      controller.changeModeLogin(LoginType.forgetPassword);
-                    },
-                    icon: Icon(
-                      Icons.arrow_back_ios,
-                      color: Theme.of(context).iconTheme.color,
+                  backgroundColor: Colors.grey.shade50,
+                  elevation: 0,
+                  leading: Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        controller.changeModeLogin(LoginType.forgetPassword);
+                      },
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Theme.of(context).primaryColor,
+                        size: 20,
+                      ),
                     ),
                   ))
               : null,
           body: SafeArea(
             child: controller.isLoading.value
-                ? const Center(child: CircularProgressIndicator())
-                : Padding(
+                ? Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "Đang xử lý...",
+                            style: TextStyle(
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                        horizontal: 24, vertical: 20),
                     child: Form(
                       key: formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          const SizedBox(height: 40),
+                          
+                          // App Logo/Branding Section
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).primaryColor,
+                                  Theme.of(context).primaryColor.withOpacity(0.8),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(32),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.flash_on,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 32),
+                          
                           if (!controller.isLogin.value)
                             Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                     controller.typeRequestOTP ==
@@ -56,171 +132,434 @@ class LoginPage extends GetView<LoginController> {
                                             .translate()
                                         : TKeys.create_account_string
                                             .translate(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge!
-                                        .copyWith(
-                                            fontSize: 18,
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 40)
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                      letterSpacing: -0.5,
+                                    )),
+                                const SizedBox(height: 8),
+                                Text(
+                                  controller.typeRequestOTP == LoginType.forgetPassword
+                                      ? "Nhập số điện thoại để khôi phục mật khẩu"
+                                      : "Tạo tài khoản mới để bắt đầu sử dụng",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 40),
                               ],
                             ),
-                          PhoneFormFieldCustom(
-                            key: const Key('phone-field'),
-                            controller: controller.phoneController,
-                            decoration: InputDecoration(
-                              fillColor: Colors.transparent,
-                              hintText: "xxx xxx xxxx",
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                    style: BorderStyle.solid,
-                                    color: Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.3)),
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                    style: BorderStyle.solid,
-                                    color: Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.6)),
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                    style: BorderStyle.solid,
-                                    color: Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.3)),
-                              ),
+                            
+                          if (controller.isLogin.value)
+                            Column(
+                              children: [
+                                Text(
+                                  TKeys.login.translate(),
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                    letterSpacing: -1,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Chào mừng bạn quay trở lại!",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+                              ],
                             ),
-                            validator: PhoneValidator.compose([
-                              // PhoneValidator.valid(context,
-                              //     errorText:
-                              //         TKeys.field_format_invalid.translate()),
-                              // PhoneValidator.valid(context),
-                              (phoneNumber) {
-                                if (isPhoneValid(phoneNumber)) {
-                                  return null;
-                                }
-                                return TKeys.field_format_invalid.translate();
-                              }
-                            ]),
-                            isCountrySelectionEnabled: true,
-                            countrySelectorNavigator:
-                                const CountrySelectorNavigator
-                                    .draggableBottomSheet(
-                                    countries: [IsoCode.VN]),
-                            showFlagInInput: false,
-                            autofillHints: const [
-                              AutofillHints.telephoneNumber
-                            ],
-                            showDialCode: true,
-                            enabled: true,
-                            onSaved: (p) => controller.onChangePhoneValue(p),
-                            onChanged: (p) => controller.onChangePhoneValue(p),
-                            autovalidateMode: AutovalidateMode.disabled,
-                            autocorrect: false,
-                          ),
-                          if (controller.isLogin.value)
-                            const SizedBox(height: 6),
-                          if (controller.isLogin.value)
-                            TextFieldCustom(
-                              TKeys.password.translate(),
-                              obscureText: true,
-                              validator: (s) {
-                                if (s == null || s.isEmpty) {
+                            
+                          // Enhanced Phone Input Field with +84 prefix
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: TextFormField(
+                              controller: phoneController,
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                prefixIcon: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  margin: const EdgeInsets.only(right: 12),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Vietnamese flag design
+                                      Container(
+                                        width: 24,
+                                        height: 16,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.grey.shade300),
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: Container(
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFDA020E),
+                                            ),
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.star,
+                                                color: Color(0xFFFFFF00),
+                                                size: 8,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "+84",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                labelText: TKeys.phone.translate(),
+                                hintText: "xxx xxx xxx",
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontSize: 16,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: Theme.of(context).primaryColor,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                    width: 2,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
                                   return TKeys.dont_blank.translate();
                                 }
-                                if (s.length < 6 || s.length > 32) {
-                                  return TKeys.more_than_6.translate();
+                                if (value.length < 9 || value.length > 10) {
+                                  return "Số điện thoại không hợp lệ";
                                 }
+                                return null;
                               },
-                              onChange: (s) =>
-                                  controller.onChangePasswordValue(s ?? ""),
+                              onChanged: (value) {
+                                // Update phone value for controller use
+                                controller.onChangePhoneValue(value);
+                              },
                             ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              GestureDetector(
-                                onTap: () => controller
-                                    .changeModeLogin(LoginType.forgetPassword),
-                                child: Text(
-                                    controller.isLogin.value
-                                        ? TKeys.forget_password.translate()
-                                        : controller
-                                            .textForgetPasswordString.value,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium!
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            fontWeight: FontWeight.bold)),
-                              ),
-                            ],
                           ),
+                          
                           const SizedBox(height: 24),
-                          ButtonPrimary(
-                            controller.isLogin.value
-                                ? TKeys.confirm.translate()
-                                : controller.textConfirmString.value,
-                            onPress: () async {
-                              if (!formKey.currentState!.validate() ||
-                                  !isPhoneValid(
-                                      controller.phoneController.value)) {
-                                // EasyLoading.showError(TKeys.fail.translate(),
-                                //     duration: const Duration(seconds: 5));
-                                return;
-                              }
-                              ResponseBase<UserModel>? isLogin =
-                                  await controller.letLogin();
-
-                              if (controller.isLogin.value) {
-                                if (isLogin != null && isLogin.data != null) {
-                                  // ignore: use_build_context_synchronously
-
-                                  Get.offAndToNamed("/home");
-                                  Get.updateLocale(Locale(
-                                      isLogin.data?.languageCode ?? "vi", ''));
-                                } else {
-                                  // ignore: use_build_context_synchronously
-                                  controller.getStringErrorValue(
-                                      isLogin?.message ?? "", context);
-                                }
-                              } else {
-                                if (isLogin != null && isLogin.data != null) {
-                                  Get.toNamed("/otp",
-                                      arguments: controller.userModelResponse);
-                                } else if (isLogin != null &&
-                                    // ignore: unrelated_type_equality_checks
-                                    isLogin.message == "PHONE_EXIST") {
-                                  // ignore: use_build_context_synchronously
-                                  letPopupRegister(context);
-                                  return;
-                                } else {
-                                  // ignore: use_build_context_synchronously
-                                  controller.getStringErrorValue(
-                                      isLogin?.message ?? "", context);
-                                }
-                              }
-                              controller.rerest();
-                            },
-                          ),
-                          const SizedBox(height: 12),
+                          
                           if (controller.isLogin.value)
-                            SizedBox(
-                              width: double.maxFinite,
-                              child: ButtonPrimaryOutline(
-                                TKeys.register.translate(),
-                                () {
-                                  controller
-                                      .changeModeLogin(LoginType.register);
-                                },
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                            )
+                              child: TextFormField(
+                                obscureText: true,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: TKeys.password.translate(),
+                                  hintText: TKeys.password.translate(),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                    fontSize: 16,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: Theme.of(context).primaryColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                ),
+                                validator: (s) {
+                                  if (s == null || s.isEmpty) {
+                                    return TKeys.dont_blank.translate();
+                                  }
+                                  if (s.length < 6 || s.length > 32) {
+                                    return TKeys.more_than_6.translate();
+                                  }
+                                  return null;
+                                },
+                                onChanged: (s) => controller.onChangePasswordValue(s),
+                              ),
+                            ),
+                            
+                          const SizedBox(height: 20),
+                          
+                          // Forgot Password / Info Section
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap: () => controller
+                                        .changeModeLogin(LoginType.forgetPassword),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      child: Text(
+                                          controller.isLogin.value
+                                              ? TKeys.forget_password.translate()
+                                              : controller
+                                                  .textForgetPasswordString.value,
+                                          style: TextStyle(
+                                            color: Theme.of(context).primaryColor,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          )),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 32),
+                          
+                          // Primary Action Button
+                          Container(
+                            width: double.infinity,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).primaryColor,
+                                  Theme.of(context).primaryColor.withOpacity(0.8),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () async {
+                                  if (!formKey.currentState!.validate()) {
+                                    return;
+                                  }
+                                  
+                                  // Validate phone number
+                                  if (!isPhoneValid(phoneController.text)) {
+                                    EasyLoading.showError(TKeys.field_format_invalid.translate(),
+                                        duration: const Duration(seconds: 3));
+                                    return;
+                                  }
+                                  
+                                  ResponseBase<UserModel>? isLogin =
+                                      await controller.letLogin();
+
+                                  if (controller.isLogin.value) {
+                                    if (isLogin != null && isLogin.data != null) {
+                                      Get.offAndToNamed("/home");
+                                      Get.updateLocale(Locale(
+                                          isLogin.data?.languageCode ?? "vi", ''));
+                                    } else {
+                                      controller.getStringErrorValue(
+                                          isLogin?.message ?? "", context);
+                                    }
+                                  } else {
+                                    if (isLogin != null && isLogin.data != null) {
+                                      Get.toNamed("/otp",
+                                          arguments: controller.userModelResponse);
+                                    } else if (isLogin != null &&
+                                        isLogin.message == "PHONE_EXIST") {
+                                      letPopupRegister(context);
+                                      return;
+                                    } else {
+                                      controller.getStringErrorValue(
+                                          isLogin?.message ?? "", context);
+                                    }
+                                  }
+                                  controller.rerest();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        controller.isLogin.value
+                                            ? TKeys.confirm.translate()
+                                            : controller.textConfirmString.value,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Secondary Action (Register)
+                          if (controller.isLogin.value)
+                            Container(
+                              width: double.infinity,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Theme.of(context).primaryColor,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    controller.changeModeLogin(LoginType.register);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.person_add_rounded,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          TKeys.register.translate(),
+                                          style: TextStyle(
+                                            color: Theme.of(context).primaryColor,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            
+                          const SizedBox(height: 40),
                         ],
                       ),
                     ),
@@ -229,14 +568,16 @@ class LoginPage extends GetView<LoginController> {
         ));
   }
 
-  isPhoneValid(PhoneNumber? phoneNumber) {
-    if (phoneNumber?.nsn.length == 9 ||
-        phoneNumber?.nsn.length == 10 ||
-        (phoneNumber?.countryCode == '81' && phoneNumber?.nsn.length == 11)) {
+  // Simple phone validation for Vietnamese numbers
+  bool isPhoneValid(String phoneNumber) {
+    // Remove any spaces or special characters
+    String cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // Check if it's a valid Vietnamese phone number (9-10 digits)
+    if (cleanPhone.length >= 9 && cleanPhone.length <= 10) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   letPopupRegister(BuildContext cxt) {

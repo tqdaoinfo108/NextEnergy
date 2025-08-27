@@ -22,14 +22,13 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   hive_generator: ^2.0.0
-  phone_form_field: ^9.1.0
   pinput: ^2.2.23
   dio: ^4.0.6
   image_picker: ^0.8.6+1
   google_maps_flutter: ^2.5.0
   geolocator: ^9.0.2
   # flutter_blue: ^0.8.0
-  flutter_blue_plus: ^1.32.12
+  flutter_blue_plus: ^1.35.5
   map_launcher: ^4.0.0
   permission_handler: ^12.0.1
   # go_router_flow: ^6.0.0+3
@@ -50,6 +49,8 @@ dependencies:
   intro_slider: ^4.2.1
   awesome_notifications_core: ^0.9.3 # <~ always ensure to use the latest version
   awesome_notifications: any
+  flutter_localizations:
+    sdk: flutter
   # one_context: ^2.1.0
   # sentry_flutter: ^7.12.0
 
@@ -80,7 +81,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/translations/
 
 flutter_native_splash:
 

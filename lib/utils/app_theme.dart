@@ -13,8 +13,8 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       colorScheme: ColorScheme.light(
-        primary: primaryGreen,
-        secondary: accent,
+        primary: const Color(0xFF059669),
+        secondary: const Color(0xFF10B981),
         background: background,
       ),
       scaffoldBackgroundColor: background,

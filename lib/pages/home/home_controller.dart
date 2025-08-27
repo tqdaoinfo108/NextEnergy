@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:convert_vietnamese/convert_vietnamese.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:v2/main.dart';
 
 import '../../model/park_model.dart';
 import '../../model/response_base.dart';
@@ -89,7 +88,7 @@ class HomeController extends GetxController {
 
   updateUserModel(UserModel _userModel) {
     userModel.value = _userModel;
-    update();
+    // Removed update() - using reactive programming with Obx
   }
 
   // Methods for selectedStation
@@ -99,6 +98,167 @@ class HomeController extends GetxController {
 
   void clearSelectedStation() {
     selectedStation.value = null;
+  }
+
+  // Create modern electric car marker with dynamic styling
+  Future<BitmapDescriptor> _createCustomMarker(ParkingModel station) async {
+    try {
+      // Create custom marker widget
+      final Widget markerWidget = Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: (station.powerSocketAvailable ?? 0) > 0 
+                ? const Color(0xFF10B981) 
+                : Colors.red,
+            width: 3,
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Main EV icon
+            Center(
+              child: Icon(
+                Icons.electric_car_rounded,
+                size: 28,
+                color: (station.powerSocketAvailable ?? 0) > 0 
+                    ? const Color(0xFF10B981) 
+                    : Colors.red,
+              ),
+            ),
+            // Status indicator
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: (station.powerSocketAvailable ?? 0) > 0 
+                      ? const Color(0xFF10B981) 
+                      : Colors.red,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    '${station.powerSocketAvailable ?? 0}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // VIP indicator for premium stations
+            if (station.isVIP ?? false)
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                    ),
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 1,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.star,
+                    size: 8,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+
+      // Convert widget to bitmap
+      return await _createBitmapFromWidget(markerWidget);
+    } catch (e) {
+      // Enhanced fallback with colored default markers
+      if ((station.powerSocketAvailable ?? 0) > 0) {
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+      } else {
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+      }
+    }
+  }
+
+  // Convert widget to bitmap for custom markers
+  Future<BitmapDescriptor> _createBitmapFromWidget(Widget widget) async {
+    try {
+      final RenderRepaintBoundary repaintBoundary = RenderRepaintBoundary();
+      final RenderView renderView = RenderView(
+        view: WidgetsBinding.instance.platformDispatcher.views.first,
+        child: RenderPositionedBox(
+          alignment: Alignment.center,
+          child: repaintBoundary,
+        ),
+        configuration: ViewConfiguration.fromView(
+          WidgetsBinding.instance.platformDispatcher.views.first,
+        ),
+      );
+
+      final PipelineOwner pipelineOwner = PipelineOwner();
+      final BuildOwner buildOwner = BuildOwner(focusManager: FocusManager());
+
+      pipelineOwner.rootNode = renderView;
+      renderView.prepareInitialFrame();
+
+      final RenderObjectToWidgetElement<RenderBox> rootElement =
+          RenderObjectToWidgetAdapter<RenderBox>(
+        container: repaintBoundary,
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: widget,
+        ),
+      ).attachToRenderTree(buildOwner);
+
+      buildOwner.buildScope(rootElement);
+      buildOwner.finalizeTree();
+
+      pipelineOwner.flushLayout();
+      pipelineOwner.flushCompositingBits();
+      pipelineOwner.flushPaint();
+
+      final image = await repaintBoundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final uint8List = byteData!.buffer.asUint8List();
+
+      return BitmapDescriptor.fromBytes(uint8List);
+    } catch (e) {
+      // Fallback to asset images if widget conversion fails
+      final double width = Get.width * (Platform.isAndroid ? 0.1 : 0.03);
+      return Platform.isAndroid
+          ? await BitmapDescriptor.fromAssetImage(
+              ImageConfiguration(size: Size(width, width)),
+              'assets/images/charging.png')
+          : await BitmapDescriptor.fromAssetImage(
+              ImageConfiguration(size: Size(width, width)),
+              'assets/images/charging_ios.png');
+    }
   }
 
   getListParkSlot() async {
@@ -155,7 +315,7 @@ class HomeController extends GetxController {
       var user = await HttpHelper.getProfile(HiveHelper.get(Constants.USER_ID));
       if (user != null && user.data != null) {
         userModel.value = user.data!;
-        update();
+        // Removed update() - using reactive programming with Obx
       }
     } catch (e) {}
   }
@@ -197,7 +357,7 @@ class HomeController extends GetxController {
       }
     }
     listParkSlot.value.totals = listParkSlot.value.data!.length;
-    update();
+    // Removed update() - using reactive programming with Obx
   }
 
   Future<bool> _getListParkSlot(
@@ -210,15 +370,8 @@ class HomeController extends GetxController {
       listParkSlotTemp =
           ResponseBase(data: resonse.data!.toList(), totals: resonse.totals);
       listMaker.clear();
-      double width = Get.width * (Platform.isAndroid ? 0.1 : 0.03);
       for (ParkingModel item in listParkSlot.value.data ?? []) {
-        final icon = Platform.isAndroid
-            ? await BitmapDescriptor.fromAssetImage(
-                ImageConfiguration(size: Size(width, width)),
-                'assets/images/charging.png')
-            : await BitmapDescriptor.fromAssetImage(
-                ImageConfiguration(size: Size(width, width)),
-                'assets/images/charging_ios.png');
+        final icon = await _createCustomMarker(item);
         listMaker.add(Marker(
           markerId: MarkerId("${item.parkingID}"),
           position: item.getLatLng,
@@ -232,7 +385,7 @@ class HomeController extends GetxController {
           // ignore: use_build_context_synchronously
         ));
       }
-      update();
+      // Removed update() - using reactive programming with Obx
       return true;
     } catch (e) {}
     return false;

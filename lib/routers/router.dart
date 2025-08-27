@@ -9,6 +9,7 @@ import 'package:v2/pages/login/login_controller.dart';
 import 'package:v2/pages/login/login_page.dart';
 import 'package:v2/pages/login_update/login_update_controller.dart';
 import 'package:v2/pages/login_update/login_update_page.dart';
+import 'package:v2/pages/main_tab/main_tab_page.dart';
 import 'package:v2/pages/member_code/member_code_controller.dart';
 import 'package:v2/pages/no_internet/no_internet_page.dart';
 import 'package:v2/pages/notification/notification_controller.dart';
@@ -32,8 +33,6 @@ import 'package:v2/utils/const.dart';
 
 import '../pages/intro/intro_page.dart';
 import '../pages/member_code/member_code_page.dart';
-import '../pages/payment/payment_3ds_controller.dart';
-import '../pages/payment/payment_3ds_page.dart';
 import '../pages/payment/payment_form_controller.dart';
 import '../pages/profile_change_pass_page/profile_change_pass_page.dart';
 import '../services/base_hive.dart';
@@ -50,13 +49,13 @@ String get getInitialRoute =>
 
 Bindings get getInitialBinding =>
     HiveHelper.get(Constants.USER_ID, defaultvalue: 0) != 0
-        ? HomeBind()
+        ? MainTabBinding()
         : HiveHelper.get(Constants.TERMS_OF_SERVICE) != null
             ? LoginBind()
             : TermsOfServiceBind();
 
 get pageList => [
-      GetPage(name: '/home', page: () => HomePage(), binding: HomeBind()),
+      GetPage(name: '/home', page: () => const MainTabPage(), binding: MainTabBinding()),
       GetPage(
           name: '/termsofservice',
           page: () => const TermsOfServicePage(),
