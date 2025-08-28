@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:v2/model/booking_model.dart';
 import 'package:v2/pages/booking/booking_controller.dart';
-import 'package:v2/pages/customs/appbar.dart';
 import 'package:v2/services/localization_service.dart';
 
 import '../../utils/date_time_utils.dart';
@@ -53,7 +52,7 @@ class BookingPage extends GetView<BookingController> {
           ),
           const SizedBox(height: 24),
           Text(
-            "Loading charging history...",
+            TKeys.loading_charging_history.translate(),
             style: theme.textTheme.bodyLarge?.copyWith(
               color: Colors.grey.shade600,
             ),
@@ -94,7 +93,7 @@ class BookingPage extends GetView<BookingController> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Start charging to see your history here",
+              TKeys.start_charging.translate(),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade600,
               ),
@@ -104,7 +103,7 @@ class BookingPage extends GetView<BookingController> {
             ElevatedButton.icon(
               onPressed: () => Get.back(),
               icon: const Icon(Icons.add),
-              label: const Text("Start Charging"),
+              label: Text(TKeys.start_charging.translate()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor,
                 foregroundColor: Colors.white,
@@ -303,14 +302,14 @@ Widget _buildLocationInfo(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data.parkingName ?? "Unknown Station",
+                  data.parkingName ?? TKeys.unknown_station.translate(),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  data.addressParking ?? "No address",
+                  data.addressParking ?? TKeys.no_address.translate(),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.grey.shade600,
                   ),
@@ -354,17 +353,17 @@ Widget _buildStatsGrid(
     ),
     child: Row(
       children: [
-        _buildStatItem(theme, data.ambe?.toString() ?? "-", "A", "Current",
+        _buildStatItem(theme, data.ambe?.toString() ?? "-", "A", TKeys.current.translate(),
             Icons.electrical_services),
         _buildStatDivider(),
         _buildStatItem(
-            theme, data.volt?.toString() ?? "-", "V", "Voltage", Icons.bolt),
+            theme, data.volt?.toString() ?? "-", "V", TKeys.voltage.translate(), Icons.bolt),
         _buildStatDivider(),
         _buildStatItem(theme, data.powerConsumption?.toStringAsFixed(1) ?? "-",
-            "kWh", "Energy", Icons.battery_charging_full),
+            "kWh", TKeys.energy.translate(), Icons.battery_charging_full),
         _buildStatDivider(),
         _buildStatItem(theme, "${data.priceAmount?.toInt() ?? 0}",
-            data.unit ?? "¥", "Cost", Icons.payments),
+            data.unit ?? "¥", TKeys.cost.translate(), Icons.payments),
       ],
     ),
   );

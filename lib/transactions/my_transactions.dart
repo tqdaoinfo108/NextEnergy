@@ -240,7 +240,16 @@ class MyTranslations extends Translations {
           "permanently_delete_account": "Permanently delete your account",
           "action_cannot_undone": "This action cannot be undone!",
           "logout_confirmation": "Are you sure you want to sign out?",
-          "delete_account_confirmation": "Are you sure you want to delete your account?"
+          "delete_account_confirmation": "Are you sure you want to delete your account?",
+          // Booking page translations
+          "loading_charging_history": "Loading charging history...",
+          "start_charging": "Start Charging", 
+          "unknown_station": "Unknown Station",
+          "no_address": "No address",
+          "current": "Current",
+          "voltage": "Voltage", 
+          "energy": "Energy",
+          "cost": "Cost"
         },
         'vi': {
           "home": "Trang chủ",
@@ -445,7 +454,16 @@ class MyTranslations extends Translations {
           "permanently_delete_account": "Xóa vĩnh viễn tài khoản",
           "action_cannot_undone": "Hành động này không thể hoàn tác!",
           "logout_confirmation": "Bạn có chắc chắn muốn đăng xuất?",
-          "delete_account_confirmation": "Bạn có chắc chắn muốn xóa tài khoản?"
+          "delete_account_confirmation": "Bạn có chắc chắn muốn xóa tài khoản?",
+          // Booking page translations
+          "loading_charging_history": "Đang tải lịch sử sạc...",
+          "start_charging": "Bắt đầu sạc",
+          "unknown_station": "Trạm sạc không xác định", 
+          "no_address": "Không có địa chỉ",
+          "current": "Dòng điện",
+          "voltage": "Điện áp",
+          "energy": "Năng lượng", 
+          "cost": "Chi phí"
         }
       };
 }

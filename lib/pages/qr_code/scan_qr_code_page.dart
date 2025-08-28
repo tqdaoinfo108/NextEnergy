@@ -19,6 +19,7 @@ class ScanQRCodeController extends GetxController {
   bool isNextToPage = true;
   RxBool isScan = false.obs;
   RxBool isFlashOn = false.obs;
+  bool _isDialogShowing = false; // Flag để tránh hiện popup nhiều lần
 
   Future<void> _requestPermissions() async {
     await [Permission.camera].request();
@@ -38,13 +39,9 @@ class ScanQRCodeController extends GetxController {
     isNextToPage = true;
     isScan.value = false;
     isFlashOn.value = false;
+    _isDialogShowing = false;
     
-    // Tự động hiện dialog khi quay lại trang (nếu chưa scan)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!isScan.value && isNextToPage) {
-        showScanDialog();
-      }
-    });
+    // Không tự động hiện dialog ở đây nữa để tránh duplicate
   }
 
   @override
@@ -101,14 +98,23 @@ class ScanQRCodeController extends GetxController {
       isNextToPage = true;
       isFlashOn.value = false;
       isScan.value = false;
+      _isDialogShowing = false;
       
-      // Tự động hiện dialog để bắt đầu scan
-      if (Get.context != null) {
-        showScanDialog();
-      }
+      // Hiện dialog một cách an toàn
+      _showDialogSafely();
       
     } catch (e) {
       print("Error restarting scanner: $e");
+    }
+  }
+
+  // Method để hiện dialog một cách an toàn, tránh duplicate
+  Future<void> _showDialogSafely() async {
+    if (_isDialogShowing || isScan.value) return;
+    
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (Get.context != null && !_isDialogShowing && !isScan.value) {
+      showScanDialog();
     }
   }
 
@@ -119,7 +125,11 @@ class ScanQRCodeController extends GetxController {
   }
 
   Future<void> showScanDialog() async {
+    if (_isDialogShowing) return; // Tránh hiện dialog nhiều lần
+    
+    _isDialogShowing = true;
     await Future.delayed(const Duration(milliseconds: 50));
+    
     return showDialog<void>(
       context: Get.context!,
       barrierDismissible: false,
@@ -127,8 +137,9 @@ class ScanQRCodeController extends GetxController {
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
-            actionsAlignment: MainAxisAlignment.spaceBetween,
-            actionsOverflowAlignment: OverflowBarAlignment.center,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Text(
               TKeys.notice.translate(),
               textAlign: TextAlign.center,
@@ -153,14 +164,19 @@ class ScanQRCodeController extends GetxController {
                 child: Text(TKeys.no_scan.translate(),
                     style: Theme.of(context).textTheme.bodyMedium),
                 onPressed: () {
+                  _isDialogShowing = false;
                   Get.back();
                   Get.back();
                 },
               ),
-              TextButton(
-                child: Text(TKeys.yes.translate(),
-                    style: Theme.of(context).textTheme.bodyMedium),
+              ElevatedButton(
+                child: Text(TKeys.yes.translate()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () async {
+                  _isDialogShowing = false;
                   Get.back();
                   
                   // Reset trạng thái và restart scanner
@@ -180,11 +196,16 @@ class ScanQRCodeController extends GetxController {
           ),
         );
       },
-    );
+    ).then((_) {
+      _isDialogShowing = false; // Đảm bảo flag được reset khi dialog đóng
+    });
   }
 
   Future<void> _showDialog() async {
-    return showScanDialog();
+    // Chỉ hiện dialog nếu chưa có dialog nào đang hiện
+    if (!_isDialogShowing) {
+      return showScanDialog();
+    }
   }
 }
 
@@ -196,7 +217,7 @@ class ScanQRCodePage extends GetView<ScanQRCodeController> {
     return PageLifecycle(
       stateChanged: (bool appeared) {
         // Khi trang xuất hiện lại (back từ trang khác)
-        if (appeared) {
+        if (appeared && !controller._isDialogShowing && !controller.isScan.value) {
           controller.restartScanner();
         }
       },

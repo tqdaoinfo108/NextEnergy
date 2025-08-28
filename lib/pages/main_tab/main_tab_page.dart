@@ -44,7 +44,7 @@ class MainTabPage extends GetView<MainTabController> {
         physics: const NeverScrollableScrollPhysics(), // Prevent swipe between tabs
         children: [
           HomePage(),
-          const ScanQRCodePage(),
+          // const ScanQRCodePage(),
           const BookingPage(),
           const ProfilePage(),
         ],
@@ -81,23 +81,23 @@ class MainTabPage extends GetView<MainTabController> {
                   isActive: controller.currentIndex.value == 0,
                   onTap: () => controller.changePage(0),
                 ),
+                // _BottomNavItem(
+                //   icon: Icons.qr_code_rounded,
+                //   label: TKeys.scan_qr.translate(),
+                //   isActive: controller.currentIndex.value == 1,
+                //   onTap: () => controller.changePage(1),
+                // ),
                 _BottomNavItem(
-                  icon: Icons.qr_code_rounded,
-                  label: TKeys.scan_qr.translate(),
+                  icon: Icons.history_rounded,
+                  label: TKeys.history.translate(),
                   isActive: controller.currentIndex.value == 1,
                   onTap: () => controller.changePage(1),
                 ),
                 _BottomNavItem(
-                  icon: Icons.history_rounded,
-                  label: TKeys.history.translate(),
-                  isActive: controller.currentIndex.value == 2,
-                  onTap: () => controller.changePage(2),
-                ),
-                _BottomNavItem(
                   icon: Icons.person_rounded,
                   label: TKeys.profile.translate(),
-                  isActive: controller.currentIndex.value == 3,
-                  onTap: () => controller.changePage(3),
+                  isActive: controller.currentIndex.value == 2,
+                  onTap: () => controller.changePage(2),
                 ),
               ],
             ),
