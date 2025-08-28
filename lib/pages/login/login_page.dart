@@ -16,9 +16,7 @@ class LoginPage extends GetView<LoginController> {
   Widget build(BuildContext context) {
     final formKey = GlobalKey<FormState>(debugLabel: '_childWidgetKey3');
     final phoneController = TextEditingController();
-    final RxBool obscurePassword =
-        true.obs; // State để theo dõi ẩn/hiện password
-
+    
     return Obx(() => Scaffold(
           backgroundColor: Colors.grey.shade50,
           appBar: !controller.isLogin.value
@@ -93,7 +91,7 @@ class LoginPage extends GetView<LoginController> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const SizedBox(height: 40),
-
+                          
                           // App Logo/Branding Section
                           Container(
                             padding: const EdgeInsets.all(24),
@@ -101,9 +99,7 @@ class LoginPage extends GetView<LoginController> {
                               gradient: LinearGradient(
                                 colors: [
                                   Theme.of(context).primaryColor,
-                                  Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.8),
+                                  Theme.of(context).primaryColor.withOpacity(0.8),
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -111,9 +107,7 @@ class LoginPage extends GetView<LoginController> {
                               borderRadius: BorderRadius.circular(32),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.3),
+                                  color: Theme.of(context).primaryColor.withOpacity(0.3),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -125,9 +119,9 @@ class LoginPage extends GetView<LoginController> {
                               color: Colors.white,
                             ),
                           ),
-
+                          
                           const SizedBox(height: 32),
-
+                          
                           if (!controller.isLogin.value)
                             Column(
                               children: [
@@ -146,8 +140,7 @@ class LoginPage extends GetView<LoginController> {
                                     )),
                                 const SizedBox(height: 8),
                                 Text(
-                                  controller.typeRequestOTP ==
-                                          LoginType.forgetPassword
+                                  controller.typeRequestOTP == LoginType.forgetPassword
                                       ? "Nhập số điện thoại để khôi phục mật khẩu"
                                       : "Tạo tài khoản mới để bắt đầu sử dụng",
                                   style: TextStyle(
@@ -159,7 +152,7 @@ class LoginPage extends GetView<LoginController> {
                                 const SizedBox(height: 40),
                               ],
                             ),
-
+                            
                           if (controller.isLogin.value)
                             Column(
                               children: [
@@ -183,7 +176,7 @@ class LoginPage extends GetView<LoginController> {
                                 const SizedBox(height: 40),
                               ],
                             ),
-
+                            
                           // Enhanced Phone Input Field with +84 prefix
                           Container(
                             decoration: BoxDecoration(
@@ -210,8 +203,7 @@ class LoginPage extends GetView<LoginController> {
                               ),
                               decoration: InputDecoration(
                                 prefixIcon: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   margin: const EdgeInsets.only(right: 12),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -221,14 +213,11 @@ class LoginPage extends GetView<LoginController> {
                                         width: 24,
                                         height: 16,
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                          border: Border.all(
-                                              color: Colors.grey.shade300),
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.grey.shade300),
                                         ),
                                         child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(4),
                                           child: Container(
                                             decoration: const BoxDecoration(
                                               color: Color(0xFFDA020E),
@@ -290,8 +279,7 @@ class LoginPage extends GetView<LoginController> {
                                     width: 2,
                                   ),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 20),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                                 filled: true,
                                 fillColor: Colors.white,
                               ),
@@ -310,9 +298,9 @@ class LoginPage extends GetView<LoginController> {
                               },
                             ),
                           ),
-
+                          
                           const SizedBox(height: 24),
-
+                          
                           if (controller.isLogin.value)
                             Container(
                               decoration: BoxDecoration(
@@ -327,7 +315,7 @@ class LoginPage extends GetView<LoginController> {
                                 ],
                               ),
                               child: TextFormField(
-                                obscureText: obscurePassword.value,
+                                obscureText: true,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -338,18 +326,6 @@ class LoginPage extends GetView<LoginController> {
                                   hintStyle: TextStyle(
                                     color: Colors.grey.shade400,
                                     fontSize: 16,
-                                  ),
-                                  suffixIcon: IconButton(
-                                    onPressed: () {
-                                      obscurePassword.value =
-                                          !obscurePassword.value;
-                                    },
-                                    icon: Icon(
-                                      obscurePassword.value
-                                          ? Icons.visibility_off_outlined
-                                          : Icons.visibility_outlined,
-                                      color: Colors.grey.shade600,
-                                    ),
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
@@ -380,8 +356,7 @@ class LoginPage extends GetView<LoginController> {
                                       width: 2,
                                     ),
                                   ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 20),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                                   filled: true,
                                   fillColor: Colors.white,
                                 ),
@@ -394,13 +369,12 @@ class LoginPage extends GetView<LoginController> {
                                   }
                                   return null;
                                 },
-                                onChanged: (s) =>
-                                    controller.onChangePasswordValue(s),
+                                onChanged: (s) => controller.onChangePasswordValue(s),
                               ),
                             ),
-
+                            
                           const SizedBox(height: 20),
-
+                          
                           // Forgot Password / Info Section
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -411,21 +385,18 @@ class LoginPage extends GetView<LoginController> {
                                   color: Colors.transparent,
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(8),
-                                    onTap: () => controller.changeModeLogin(
-                                        LoginType.forgetPassword),
+                                    onTap: () => controller
+                                        .changeModeLogin(LoginType.forgetPassword),
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 4),
                                       child: Text(
                                           controller.isLogin.value
-                                              ? TKeys.forget_password
-                                                  .translate()
+                                              ? TKeys.forget_password.translate()
                                               : controller
-                                                  .textForgetPasswordString
-                                                  .value,
+                                                  .textForgetPasswordString.value,
                                           style: TextStyle(
-                                            color:
-                                                Theme.of(context).primaryColor,
+                                            color: Theme.of(context).primaryColor,
                                             fontWeight: FontWeight.w600,
                                             fontSize: 14,
                                           )),
@@ -435,9 +406,9 @@ class LoginPage extends GetView<LoginController> {
                               ],
                             ),
                           ),
-
+                          
                           const SizedBox(height: 32),
-
+                          
                           // Primary Action Button
                           Container(
                             width: double.infinity,
@@ -446,9 +417,7 @@ class LoginPage extends GetView<LoginController> {
                               gradient: LinearGradient(
                                 colors: [
                                   Theme.of(context).primaryColor,
-                                  Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.8),
+                                  Theme.of(context).primaryColor.withOpacity(0.8),
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -456,9 +425,7 @@ class LoginPage extends GetView<LoginController> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.3),
+                                  color: Theme.of(context).primaryColor.withOpacity(0.3),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -472,35 +439,30 @@ class LoginPage extends GetView<LoginController> {
                                   if (!formKey.currentState!.validate()) {
                                     return;
                                   }
-
+                                  
                                   // Validate phone number
                                   if (!isPhoneValid(phoneController.text)) {
-                                    EasyLoading.showError(
-                                        TKeys.field_format_invalid.translate(),
+                                    EasyLoading.showError(TKeys.field_format_invalid.translate(),
                                         duration: const Duration(seconds: 3));
                                     return;
                                   }
-
+                                  
                                   ResponseBase<UserModel>? isLogin =
                                       await controller.letLogin();
 
                                   if (controller.isLogin.value) {
-                                    if (isLogin != null &&
-                                        isLogin.data != null) {
+                                    if (isLogin != null && isLogin.data != null) {
                                       Get.offAndToNamed("/home");
                                       Get.updateLocale(Locale(
-                                          isLogin.data?.languageCode ?? "vi",
-                                          ''));
+                                          isLogin.data?.languageCode ?? "vi", ''));
                                     } else {
                                       controller.getStringErrorValue(
                                           isLogin?.message ?? "", context);
                                     }
                                   } else {
-                                    if (isLogin != null &&
-                                        isLogin.data != null) {
+                                    if (isLogin != null && isLogin.data != null) {
                                       Get.toNamed("/otp",
-                                          arguments:
-                                              controller.userModelResponse);
+                                          arguments: controller.userModelResponse);
                                     } else if (isLogin != null &&
                                         isLogin.message == "PHONE_EXIST") {
                                       letPopupRegister(context);
@@ -513,16 +475,14 @@ class LoginPage extends GetView<LoginController> {
                                   controller.rerest();
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 24),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
                                         controller.isLogin.value
                                             ? TKeys.confirm.translate()
-                                            : controller
-                                                .textConfirmString.value,
+                                            : controller.textConfirmString.value,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 18,
@@ -542,9 +502,9 @@ class LoginPage extends GetView<LoginController> {
                               ),
                             ),
                           ),
-
+                          
                           const SizedBox(height: 20),
-
+                          
                           // Secondary Action (Register)
                           if (controller.isLogin.value)
                             Container(
@@ -570,15 +530,12 @@ class LoginPage extends GetView<LoginController> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
                                   onTap: () {
-                                    controller
-                                        .changeModeLogin(LoginType.register);
+                                    controller.changeModeLogin(LoginType.register);
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 24),
+                                    padding: const EdgeInsets.symmetric(horizontal: 24),
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.person_add_rounded,
@@ -589,8 +546,7 @@ class LoginPage extends GetView<LoginController> {
                                         Text(
                                           TKeys.register.translate(),
                                           style: TextStyle(
-                                            color:
-                                                Theme.of(context).primaryColor,
+                                            color: Theme.of(context).primaryColor,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                             letterSpacing: 0.5,
@@ -602,7 +558,7 @@ class LoginPage extends GetView<LoginController> {
                                 ),
                               ),
                             ),
-
+                            
                           const SizedBox(height: 40),
                         ],
                       ),
@@ -616,7 +572,7 @@ class LoginPage extends GetView<LoginController> {
   bool isPhoneValid(String phoneNumber) {
     // Remove any spaces or special characters
     String cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
-
+    
     // Check if it's a valid Vietnamese phone number (9-10 digits)
     if (cleanPhone.length >= 9 && cleanPhone.length <= 10) {
       return true;

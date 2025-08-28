@@ -23,17 +23,6 @@ import '../../services/network_connect.dart';
 import '../../utils/const.dart';
 import '../customs/count_down.dart';
 
-// Class để chứa thông tin về các Bluetooth characteristics
-class BluetoothCharacteristics {
-  final BluetoothCharacteristic primary;
-  final BluetoothCharacteristic? secondary;
-
-  BluetoothCharacteristics({
-    required this.primary,
-    this.secondary,
-  });
-}
-
 class ChargeCarBind extends Bindings {
   @override
   void dependencies() {
@@ -43,11 +32,6 @@ class ChargeCarBind extends Bindings {
 
 class ChargeCarController extends GetxControllerCustom
     with WidgetsBindingObserver {
-  // UUID constants for Bluetooth communication
-  static const String SERVICE_UUID = "8c30f045-683a-4777-8d21-87def63e4ef5";
-  static const String CHARACTERISTIC_UUID =
-      "e6eae575-4d89-4750-bf3e-c82d6a1cd299";
-
   late StreamSubscription<List<ScanResult>> scanBlueoothSubScription;
   late StreamSubscription<BluetoothAdapterState> stateBluetoothSubscription;
   late StreamSubscription<BluetoothConnectionState> stateConnectedSubscription;
@@ -284,57 +268,6 @@ class ChargeCarController extends GetxControllerCustom
     }
   }
 
-  // Method để write data vào cả 2 characteristics
-  Future<bool> writeToCharacteristics(BluetoothCharacteristics characteristics,
-      List<int> data, String command) async {
-    bool primarySuccess = false;
-    bool secondarySuccess = true; // Default true nếu không có secondary
-
-    try {
-      // Write vào primary characteristic
-      print(
-          "📤 Writing to PRIMARY characteristic: ${characteristics.primary.uuid}");
-      await characteristics.primary.write(data);
-      primarySuccess = true;
-      print("✅ PRIMARY write successful");
-
-      // Write vào secondary characteristic nếu có
-      if (characteristics.secondary != null) {
-        print(
-            "📤 Writing to SECONDARY characteristic: ${characteristics.secondary!.uuid}");
-        await characteristics.secondary!.write(data);
-        secondarySuccess = true;
-        print("✅ SECONDARY write successful");
-      } else {
-        print("ℹ️ No secondary characteristic to write to");
-      }
-
-      // Verify write nếu có thể
-      if (primarySuccess) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        try {
-          var verifyData = await characteristics.primary.read();
-          var verifyResult = utf8.decode(verifyData);
-          print("🔍 Verification read: '$verifyResult'");
-
-          if (verifyResult.toUpperCase().contains(command.toUpperCase())) {
-            print("✅ Write verification successful for command: $command");
-            return true;
-          }
-        } catch (e) {
-          print("⚠️ Verification read failed: $e");
-          // Vẫn coi là thành công nếu write được, chỉ verification fail
-          return primarySuccess && secondarySuccess;
-        }
-      }
-
-      return primarySuccess && secondarySuccess;
-    } catch (e) {
-      print("❌ Write failed: $e");
-      return false;
-    }
-  }
-
   // Helper method để read với error handling
   Future<String?> readWithErrorHandling(BluetoothCharacteristic characteristic,
       {int retryCount = 2}) async {
@@ -355,79 +288,40 @@ class ChargeCarController extends GetxControllerCustom
   }
 
   bool isFindBluetoothCharacteristic = true;
-  Future<BluetoothCharacteristics?> findBluetoothCharacteristics(
+  Future<BluetoothCharacteristic?> findBluetoothCharacteristic(
       {BluetoothDevice? device}) async {
     if (device == null) {
       var listDevice = FlutterBluePlus.connectedDevices;
       if (listDevice.isEmpty) return null;
 
       device = FlutterBluePlus.connectedDevices.first;
+      // if (Platform.isAndroid) {
+      //   await device.requestMtu(254);
+      // }
     }
     if (!isFindBluetoothCharacteristic) return null;
-
     try {
       var discoverServices = await device.discoverServices();
       print("🔍 Found ${discoverServices.length} services");
 
-      BluetoothCharacteristic? primaryCharacteristic;
-      BluetoothCharacteristic? secondaryCharacteristic;
-
-      // Tìm service theo UUID cụ thể
-      for (var service in discoverServices) {
-        print("🔍 Checking service: ${service.uuid}");
-
-        // Kiểm tra nếu là service mong muốn
-        if (service.uuid.toString().toLowerCase() ==
-            SERVICE_UUID.toLowerCase()) {
-          print("✅ Found target service: ${service.uuid}");
-
-          // Tìm characteristic theo UUID cụ thể
-          for (var characteristic in service.characteristics) {
-            print("🔍 Checking characteristic: ${characteristic.uuid}");
-            print(
-                "📝 Properties - Read: ${characteristic.properties.read}, Write: ${characteristic.properties.write}");
-
-            if (characteristic.uuid.toString().toLowerCase() ==
-                CHARACTERISTIC_UUID.toLowerCase()) {
-              if (characteristic.properties.read &&
-                  characteristic.properties.write) {
-                if (primaryCharacteristic == null) {
-                  primaryCharacteristic = characteristic;
-                  print(
-                      "✅ Found PRIMARY characteristic: ${characteristic.uuid}");
-                } else {
-                  secondaryCharacteristic = characteristic;
-                  print(
-                      "✅ Found SECONDARY characteristic: ${characteristic.uuid}");
-                }
-              }
-            }
-          }
-          break; // Đã tìm thấy service mong muốn, không cần tìm nữa
-        }
-      }
-
-      if (primaryCharacteristic != null) {
-        print(
-            "🎯 Using characteristics - Primary: ${primaryCharacteristic.uuid}, Secondary: ${secondaryCharacteristic?.uuid ?? 'None'}");
-        return BluetoothCharacteristics(
-          primary: primaryCharacteristic,
-          secondary: secondaryCharacteristic,
-        );
-      }
-
-      print("❌ Target characteristic not found in target service");
-
-      // Fallback: tìm bất kỳ characteristic nào có read/write
-      print("🔄 Fallback: Looking for any suitable characteristic...");
+      // Duyệt ngược từ service cuối cùng (custom service) lên đầu
       for (int i = discoverServices.length - 1; i >= 0; i--) {
         var service = discoverServices[i];
+        print("🔍 Checking service ${i}: ${service.uuid}");
+        print(
+            "🔍 Service has ${service.characteristics.length} characteristics");
+
         var characteristics = service.characteristics.where(
             (element) => element.properties.read && element.properties.write);
 
         for (var item in characteristics) {
-          print("⚠️ Using fallback characteristic: ${item.uuid}");
-          return BluetoothCharacteristics(primary: item);
+          print(
+              "✅ Found suitable characteristic in custom service: ${item.uuid}");
+          print(
+              "📝 Properties - Read: ${item.properties.read}, Write: ${item.properties.write}, WriteWithoutResponse: ${item.properties.writeWithoutResponse}");
+          print(
+              "🎯 Using characteristic from custom service (index $i): ${item.uuid}");
+          return item;
         }
       }
 
@@ -439,23 +333,12 @@ class ChargeCarController extends GetxControllerCustom
     return null;
   }
 
-  // Backward compatibility method
-  Future<BluetoothCharacteristic?> findBluetoothCharacteristic(
-      {BluetoothDevice? device}) async {
-    var characteristics = await findBluetoothCharacteristics(device: device);
-    return characteristics?.primary;
-  }
-
   // xác thực device
   bool isauthorizeDevice = false;
   authorizeDevice(BluetoothDevice device) async {
     try {
-      // Tìm cả 2 characteristics
-      var characteristics = await findBluetoothCharacteristics(device: device);
-      if (characteristics == null) {
-        print("❌ Failed to find characteristics for auth");
-        return;
-      }
+      var cx = await findBluetoothCharacteristic(device: device);
+      BluetoothCharacteristic c = cx!;
 
       var authenValue = md5
           .convert(utf8.encode(nameDevice.substring(5, 8)))
@@ -475,16 +358,12 @@ class ChargeCarController extends GetxControllerCustom
         print("⚠️ MTU request failed: $e");
       }
 
-      // Write auth vào cả 2 characteristics
-      bool writeSuccess =
-          await writeToCharacteristics(characteristics, bytes, "AUTH");
+      // Write với response để đảm bảo ESP32 nhận được
+      bool writeSuccess = await writeWithVerification(c, bytes, "AUTH");
       if (!writeSuccess) {
         print("❌ Failed to send authentication data");
         return;
       }
-
-      // Sử dụng primary characteristic để đọc response
-      BluetoothCharacteristic c = characteristics.primary;
 
       await Future.delayed(const Duration(seconds: 2)); // Tăng thời gian chờ
 
@@ -579,29 +458,20 @@ class ChargeCarController extends GetxControllerCustom
         EasyLoading.showInfo(TKeys.fail_again2.translate());
         return false;
       }
-
-      // Tìm cả 2 characteristics
-      BluetoothCharacteristics? characteristics =
-          await findBluetoothCharacteristics(device: devicesConnected.first);
-
-      if (characteristics == null) {
-        EasyLoading.showError("Không tìm thấy characteristic phù hợp");
-        return false;
-      }
+      // if (Platform.isAndroid) {
+      //   devicesConnected.first.requestMtu(254);
+      // }
+      BluetoothCharacteristic c =
+          (await findBluetoothCharacteristic(device: devicesConnected.first))!;
 
       String onCommand =
           "ON:${getTimeOpenHardware()}:${DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000}:${bookingData!.bookID}";
       List<int> bytes = utf8.encode(onCommand);
 
-      // Write vào cả 2 characteristics
-      bool writeSuccess =
-          await writeToCharacteristics(characteristics, bytes, "ON");
+      bool writeSuccess = await writeWithVerification(c, bytes, "ON");
       if (!writeSuccess) {
         return false;
       }
-
-      // Sử dụng primary characteristic để đọc response
-      BluetoothCharacteristic c = characteristics.primary;
 
       for (int i = 1; i <= expiredTimeValue; i++) {
         if (i == expiredTimeValue) {
@@ -623,9 +493,8 @@ class ChargeCarController extends GetxControllerCustom
             if (isUpdateComplete != null && isUpdateComplete.data != null) {
               List<int> bytesPAID = utf8.encode("PAID");
 
-              // Write PAID vào cả 2 characteristics
-              bool paidSuccess = await writeToCharacteristics(
-                  characteristics, bytesPAID, "PAID");
+              bool paidSuccess =
+                  await writeWithVerification(c, bytesPAID, "PAID");
               if (paidSuccess) {
                 onInitWhenBookingExist();
                 pageEnum.value = ChargeCarPageEnum.CHARGING;
@@ -657,18 +526,10 @@ class ChargeCarController extends GetxControllerCustom
         EasyLoading.showInfo(TKeys.fail_again2.translate());
         return;
       }
-
-      // Tìm cả 2 characteristics
-      var characteristics = await findBluetoothCharacteristics();
-      if (characteristics == null) {
-        print("❌ Failed to find characteristics for OFF command");
-        return;
-      }
-
+      var characteristic = (await findBluetoothCharacteristic())!;
       var bytes2 = utf8.encode("OFF");
 
-      // Send OFF command vào cả 2 characteristics
-      await writeToCharacteristics(characteristics, bytes2, "OFF");
+      await writeWithVerification(characteristic, bytes2, "OFF");
 
       await Future.delayed(const Duration(milliseconds: 500));
       var onCompleteBooking =
