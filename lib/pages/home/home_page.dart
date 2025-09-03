@@ -475,7 +475,7 @@ class HomePage extends GetView<HomeController> {
                                         FittedBox(
                                           fit: BoxFit.scaleDown,
                                           child: Text(
-                                            "${selectedStation.powerSocketAvailable ?? 0}",
+                                            "${selectedStation.totalPowerSocket ?? 0}",
                                             style: TextStyle(
                                               fontSize: fontSize,
                                               fontWeight: FontWeight.bold,

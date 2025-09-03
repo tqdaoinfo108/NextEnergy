@@ -13,6 +13,7 @@ class ParkingModel {
   double? latParking;
   double? lngParking;
   int? powerSocketAvailable;
+  int? totalPowerSocket;
   bool? isVIP;
   ParkingModel(
       {this.distance,
@@ -25,6 +26,7 @@ class ParkingModel {
       this.powerSocketAvailable,
       this.lngParking,
       this.latParking,
+      this.totalPowerSocket,
       this.isVIP});
 
   LatLng get getLatLng => LatLng(latParking ?? 0, lngParking ?? 0);
@@ -40,7 +42,8 @@ class ParkingModel {
         powerSocketAvailable: json['PowerSocketAvailable'],
         latParking: json["LatParking"],
         lngParking: json["IngParking"],
-        isVIP: json["IsVIP"]
+        isVIP: json["IsVIP"],
+        totalPowerSocket: json["TotalPowerSocket"]
       );
 
   static ResponseBase<List<ParkingModel>> getListParkingResponse(

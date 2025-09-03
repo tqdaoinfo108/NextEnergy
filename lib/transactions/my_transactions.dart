@@ -268,7 +268,7 @@ class MyTranslations extends Translations {
           "email_invalid": "Vui lòng nhập địa chỉ email hợp lệ",
           "register": "Đăng ký mới",
           "login": "Đăng nhập",
-          "phone": "Liên hệ",
+          "phone": "Số điện thoại",
           "power_socket_available": "Trạm sạc có sẵn",
           "maps_app_not_found": "Không tìm thấy ứng dụng bản đồ.",
           "scan_qr": "Quét QR",

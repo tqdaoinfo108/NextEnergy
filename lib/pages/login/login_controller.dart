@@ -73,7 +73,8 @@ class LoginController extends GetxControllerCustom {
   Future<ResponseBase<UserModel>?> letLogin() async {
     isLoading.value = true;
     update();
-
+    phoneValue =
+        phoneValue.startsWith('0') ? phoneValue.substring(1) : phoneValue;
     try {
       if (isLogin.value) {
         ResponseBase<UserModel>? user =
