@@ -422,7 +422,7 @@ class ChargeCarController extends GetxControllerCustom
         EasyLoading.showInfo(TKeys.fail_again2.translate());
         return false;
       }
-      
+
       BluetoothCharacteristic c =
           (await findBluetoothCharacteristic(device: devicesConnected.first))!;
 
@@ -441,22 +441,53 @@ class ChargeCarController extends GetxControllerCustom
         }
 
         String? rawValue = await readWithErrorHandling(c, retryCount: 1);
+        print("🔥 BLE returned $rawValue");
         if (rawValue == null) {
           print("❌ Failed to read response for iteration $i");
         } else {
           print("📡 Reading response for iteration $i: '$rawValue'");
 
           if ("true" == rawValue.toLowerCase()) {
+            print(
+                "🔥 BLE returned 'true', attempting to update payment status...");
+            print(
+                "🔥 PaymentData check: ${paymentData != null ? 'EXISTS' : 'NULL'}");
+            print("🔥 PaymentID: ${paymentData?.paymentID}");
+
             var isUpdateComplete =
                 await onUpdateAffterHardware(1); // thành công
+
+            print(
+                "🔥 Update payment result: ${isUpdateComplete != null ? 'SUCCESS' : 'NULL'}");
+            print(
+                "🔥 Update payment data: ${isUpdateComplete?.data != null ? 'HAS_DATA' : 'NO_DATA'}");
+
             if (isUpdateComplete != null && isUpdateComplete.data != null) {
               List<int> bytesPAID = utf8.encode("PAID");
 
               await c.write(bytesPAID);
+              print("🔥 Written 'PAID' to BLE device");
               onInitWhenBookingExist();
               pageEnum.value = ChargeCarPageEnum.CHARGING;
+              print("🔥 Successfully changed pageEnum to CHARGING");
               isResult = true;
               break;
+            } else {
+              print(
+                  "❌ Failed to update payment status - retrying in next iteration...");
+              // Tiếp tục loop để thử lại, thay vì dừng ngay
+              if (i >= 3) {
+                // Sau 3 lần thử, bỏ qua API và chuyển trực tiếp
+                print(
+                    "🔥 After 3 attempts, proceeding to CHARGING without API update");
+                List<int> bytesPAID = utf8.encode("PAID");
+                await c.write(bytesPAID);
+                onInitWhenBookingExist();
+                pageEnum.value = ChargeCarPageEnum.CHARGING;
+                print("🔥 Force changed pageEnum to CHARGING");
+                isResult = true;
+                break;
+              }
             }
           }
         }
@@ -537,16 +568,34 @@ class ChargeCarController extends GetxControllerCustom
   // Cập nhật trạng thái payment khi thao tác với phẩn cứng
   Future<ResponseBase<PaymentModel>?> onUpdateAffterHardware(int statusID,
       {bool isExtTime = false, int? paymentID}) async {
+    print("🔥 onUpdateAffterHardware called with statusID: $statusID");
+
+    if (paymentData == null) {
+      print("❌ PaymentData is null - cannot update payment status");
+      return null;
+    }
+
     paymentID ??= paymentData!.paymentID!;
+    print("🔥 Using paymentID: $paymentID");
+
     try {
       var data = await HttpHelper.updatePaymentAfterWaitHardware(
           paymentID, statusID,
           isExtTime: isExtTime);
+
+      print("🔥 API response: ${data != null ? 'SUCCESS' : 'NULL'}");
+      print("🔥 API data: ${data?.data != null ? 'HAS_DATA' : 'NO_DATA'}");
+
       if (data != null && data.data != null) {
         bookingData = data.data!.booking;
+        print("🔥 Updated bookingData successfully");
         return data;
+      } else {
+        print("❌ API returned null or empty data");
       }
-    } catch (e) {}
+    } catch (e) {
+      print("❌ Exception in onUpdateAffterHardware: $e");
+    }
     return null;
   }
 

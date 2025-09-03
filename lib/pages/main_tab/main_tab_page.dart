@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:v2/pages/home/home_page.dart';
 import 'package:v2/pages/home/home_controller.dart';
-import 'package:v2/pages/qr_code/scan_qr_code_page.dart';
 import 'package:v2/pages/booking/booking_page.dart';
 import 'package:v2/pages/booking/booking_controller.dart';
 import 'package:v2/pages/profile/profile_page.dart';
@@ -15,7 +14,7 @@ class MainTabController extends GetxController with GetSingleTickerProviderState
   @override
   void onInit() {
     super.onInit();
-    tabController = TabController(length: 4, vsync: this);
+    tabController = TabController(length: 3, vsync: this); // Sửa từ 4 xuống 3
     tabController.addListener(() {
       currentIndex.value = tabController.index;
     });
@@ -177,6 +176,6 @@ class MainTabBinding extends Bindings {
     Get.lazyPut<MainTabController>(() => MainTabController());
     Get.lazyPut<HomeController>(() => HomeController());
     Get.lazyPut<BookingController>(() => BookingController());
-    Get.lazyPut<ScanQRCodeController>(() => ScanQRCodeController());
+    // Get.lazyPut<ScanQRCodeController>(() => ScanQRCodeController()); // Comment out vì không dùng trong tab
   }
 }

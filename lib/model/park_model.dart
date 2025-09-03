@@ -32,19 +32,18 @@ class ParkingModel {
   LatLng get getLatLng => LatLng(latParking ?? 0, lngParking ?? 0);
 
   factory ParkingModel.fromJson(Map<String, dynamic> json) => ParkingModel(
-        distance: json['Distance'],
-        unit: json['Unit'],
-        parkingID: json['ParkingID'],
-        codeParking: json['CodeParking'],
-        nameParking: json['NameParking'],
-        phoneParking: json['PhoneParking'],
-        addressParking: json['AddressParking'],
-        powerSocketAvailable: json['PowerSocketAvailable'],
-        latParking: json["LatParking"],
-        lngParking: json["IngParking"],
-        isVIP: json["IsVIP"],
-        totalPowerSocket: json["TotalPowerSocket"]
-      );
+      distance: json['Distance'],
+      unit: json['Unit'],
+      parkingID: json['ParkingID'],
+      codeParking: json['CodeParking'],
+      nameParking: json['NameParking'],
+      phoneParking: json['PhoneParking'],
+      addressParking: json['AddressParking'],
+      powerSocketAvailable: json['PowerSocketAvailable'],
+      latParking: json["LatParking"],
+      lngParking: json["IngParking"],
+      isVIP: json["IsVIP"],
+      totalPowerSocket: json["TotalPowerSocket"]);
 
   static ResponseBase<List<ParkingModel>> getListParkingResponse(
       Map<String, dynamic> json) {
