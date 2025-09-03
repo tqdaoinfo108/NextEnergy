@@ -41,7 +41,10 @@ class ScanQRCodeController extends GetxController {
     isFlashOn.value = false;
     _isDialogShowing = false;
     
-    // Không tự động hiện dialog ở đây nữa để tránh duplicate
+    // Force stop scanner để đảm bảo clean state
+    UltraQrScanner.stopScanner().catchError((e) {
+      print("Error stopping scanner in onReady: $e");
+    });
   }
 
   @override
@@ -70,15 +73,32 @@ class ScanQRCodeController extends GetxController {
       // Dừng camera (autoStop cũng dừng, nhưng mình chủ động cho chắc)
       await UltraQrScanner.stopScanner();
 
-      Get.toNamed("/charge_car", arguments: code);
+      Get.offNamed("/charge_car", arguments: code);
       return;
     }
 
+    // QR không hợp lệ - dừng scanner tạm thời để hiển thị lỗi
+    isNextToPage = false;
+    await UltraQrScanner.stopScanner();
+    
     EasyLoading.showError(
       TKeys.qr_code_invalid.translate(),
-      duration: const Duration(seconds: 5),
+      duration: const Duration(seconds: 2),
     );
-    await Future.delayed(const Duration(seconds: 1));
+    
+    // Chờ một chút để user đọc message, sau đó restart scanner
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // Restart scanner để tiếp tục quét
+    try {
+      await UltraQrScanner.prepareScanner();
+      isNextToPage = true; // Cho phép quét lại
+    } catch (e) {
+      print("Error restarting scanner after invalid QR: $e");
+      // Nếu không restart được, reset về trạng thái ban đầu
+      isScan.value = false;
+      isNextToPage = true;
+    }
   }
 
   Future<void> toggleFlash() async {
@@ -91,7 +111,7 @@ class ScanQRCodeController extends GetxController {
   Future<void> restartScanner() async {
     try {
       await UltraQrScanner.stopScanner();
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 500)); // Tăng delay để đảm bảo camera release
       await UltraQrScanner.prepareScanner();
       
       // Reset trạng thái
@@ -105,6 +125,49 @@ class ScanQRCodeController extends GetxController {
       
     } catch (e) {
       print("Error restarting scanner: $e");
+      // Force reset nếu có lỗi
+      isNextToPage = true;
+      isFlashOn.value = false;
+      isScan.value = false;
+      _isDialogShowing = false;
+    }
+  }
+
+  // Method để force restart khi camera bị stuck
+  Future<void> forceRestartScanner() async {
+    try {
+      isNextToPage = false;
+      isScan.value = false;
+      
+      // Force stop multiple times nếu cần
+      await UltraQrScanner.stopScanner();
+      await Future.delayed(const Duration(milliseconds: 300));
+      await UltraQrScanner.stopScanner();
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Restart camera permission nếu cần
+      await _requestPermissions();
+      
+      // Prepare lại scanner
+      await UltraQrScanner.prepareScanner();
+      
+      // Reset trạng thái và hiện dialog
+      isNextToPage = true;
+      isFlashOn.value = false;
+      _isDialogShowing = false;
+      
+      // Hiện dialog để user có thể scan lại
+      if (Get.context != null) {
+        showScanDialog();
+      }
+      
+    } catch (e) {
+      print("Error force restarting scanner: $e");
+      // Reset về trạng thái ban đầu
+      isNextToPage = true;
+      isFlashOn.value = false;
+      isScan.value = false;
+      _isDialogShowing = false;
     }
   }
 
@@ -262,9 +325,33 @@ class ScanQRCodePage extends GetView<ScanQRCodeController> {
                   UltraQrScannerWidget(
                     onQrDetected: controller.onQrDetected,
                     autoStart: true,             // vào là quét ngay
-                    autoStop: true,              // dừng sau khi detect đầu tiên
+                    autoStop: false,             // không tự động dừng để có thể quét liên tục
                     showStartStopButton: false,  // ẩn nút manual
                     showFlashToggle: false,      // mình đã có FAB riêng
+                  ),
+                
+                // Nút restart camera khi bị stuck (góc trên phải)
+                if (controller.isScan.value)
+                  Positioned(
+                    top: 20,
+                    right: 20,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          controller.forceRestartScanner();
+                        },
+                        icon: const Icon(
+                          Icons.refresh,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        tooltip: "Restart camera",
+                      ),
+                    ),
                   ),
                 
                 // Hiện thị message khi chưa scan
