@@ -39,43 +39,9 @@ class ChargeCarPage extends GetView<ChargeCarController> {
             appBar: _buildAppBar(theme),
             body: _buildBody(theme),
             // Thêm floating connection status
-            floatingActionButton: _buildConnectionFAB(theme),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           ),
         ));
-  }
-
-  // Connection status FAB
-  Widget _buildConnectionFAB(ThemeData theme) {
-    return Obx(() {
-      if (controller.pageEnum.value == ChargeCarPageEnum.CHARGING ||
-          controller.pageEnum.value == ChargeCarPageEnum.WAIT_PLUGING) {
-        return const SizedBox.shrink();
-      }
-      
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        child: controller.isAvailable
-            ? FloatingActionButton.small(
-                onPressed: null,
-                backgroundColor: Colors.green,
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              )
-            : FloatingActionButton.small(
-                onPressed: () => _handleRetryConnection(),
-                backgroundColor: Colors.orange,
-                child: const Icon(
-                  Icons.refresh,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-      );
-    });
   }
 
   // Tách AppBar thành method riêng để tối ưu rebuild
@@ -105,7 +71,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
       if (!isBluetoothOn) {
         statusColor = Colors.white;
         backgroundColor = Colors.red.shade600;
-        statusText = "Bluetooth Off";
+        statusText = TKeys.grant_ble.translate();
         statusIcon = Icons.bluetooth_disabled;
       } else if (isConnecting) {
         statusColor = Colors.white;
@@ -115,7 +81,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
       } else if (isAvailable) {
         statusColor = Colors.white;
         backgroundColor = Colors.green.shade600;
-        statusText = "Connected";
+        statusText = TKeys.available.translate();
         statusIcon = Icons.bluetooth_connected;
       } else {
         statusColor = Colors.white;
@@ -260,7 +226,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
                 const SizedBox(height: 20),
                 
                 Text(
-                  "Processing...",
+                  TKeys.loading_charging_history.translate(),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -269,7 +235,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
                 const SizedBox(height: 8),
                 
                 Text(
-                  "Please wait while we process your request",
+                  TKeys.complete_charging_end_processing.translate(),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.grey.shade600,
                   ),
@@ -427,22 +393,22 @@ class ChargeCarPage extends GetView<ChargeCarController> {
   // Connection status title
   String _getConnectionStatusTitle() {
     if (!controller.isOnBluetooth) {
-      return "Bluetooth Required";
+      return TKeys.grant_ble.translate();
     } else if (controller.pageEnum.value == ChargeCarPageEnum.CONNECTING) {
       return TKeys.connecting.translate();
     } else {
-      return "Connection Failed";
+      return TKeys.unable_to_connect.translate();
     }
   }
 
   // Connection status message  
   String _getConnectionStatusMessage() {
     if (!controller.isOnBluetooth) {
-      return "Please enable Bluetooth to connect to the charging station";
+      return TKeys.grant_ble.translate();
     } else if (controller.pageEnum.value == ChargeCarPageEnum.CONNECTING) {
-      return "Connecting to your charging station...";
+      return TKeys.connecting.translate();
     } else {
-      return "Unable to connect to the charging station. Please try again.";
+      return TKeys.unable_to_connect.translate();
     }
   }
 
@@ -463,7 +429,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
           _buildStep(
             theme,
             1,
-            "Enable Bluetooth",
+            TKeys.grant_ble.translate(),
             controller.isOnBluetooth,
             Icons.bluetooth,
           ),
@@ -471,7 +437,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
           _buildStep(
             theme,
             2,
-            "Scan for device",
+            TKeys.search.translate(),
             controller.isOnBluetooth && controller.pageEnum.value == ChargeCarPageEnum.CONNECTING,
             Icons.search,
           ),
@@ -479,7 +445,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
           _buildStep(
             theme,
             3,
-            "Establish connection",
+            TKeys.connecting.translate(),
             controller.isAvailable,
             Icons.link,
           ),
@@ -563,7 +529,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
           ElevatedButton.icon(
             onPressed: () => _handleEnableBluetooth(),
             icon: const Icon(Icons.bluetooth),
-            label: Text("Enable Bluetooth"),
+            label: Text(TKeys.grant_ble.translate()),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
@@ -590,7 +556,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
 
   // Handle retry connection with loading
   Future<void> _handleRetryConnection() async {
-    EasyLoading.show(status: "Reconnecting...");
+    EasyLoading.show(status: TKeys.connecting.translate());
     try {
       await controller.connectDevice();
     } finally {
@@ -600,7 +566,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
 
   // Handle enable bluetooth with loading
   Future<void> _handleEnableBluetooth() async {
-    EasyLoading.show(status: "Enabling Bluetooth...");
+    EasyLoading.show(status: TKeys.grant_ble.translate());
     try {
       await controller.enableBluetoothAndReconnect();
     } finally {
@@ -699,7 +665,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
                 
                 // Description
                 Text(
-                  "Bluetooth is required to connect to the charging station. Please enable Bluetooth to continue.",
+                  TKeys.grant_ble.translate(),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.grey.shade600,
                   ),
@@ -717,7 +683,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
                       child: ElevatedButton.icon(
                         onPressed: () => _handleEnableBluetoothOverlay(),
                         icon: const Icon(Icons.bluetooth),
-                        label: Text("Enable Bluetooth"),
+                        label: Text(TKeys.grant_ble.translate()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
@@ -778,7 +744,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "You can also enable Bluetooth from your device settings",
+                          TKeys.grant_ble.translate(),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.blue,
                           ),
@@ -797,7 +763,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
 
   // Handle enable bluetooth from overlay with loading
   Future<void> _handleEnableBluetoothOverlay() async {
-    EasyLoading.show(status: "Enabling Bluetooth...");
+    EasyLoading.show(status: TKeys.grant_ble.translate());
     try {
       await controller.enableBluetoothAndReconnect();
     } finally {

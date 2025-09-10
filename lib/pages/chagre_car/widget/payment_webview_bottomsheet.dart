@@ -161,18 +161,18 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
           builder: (BuildContext context) {
             return AlertDialog(
               title: Text(TKeys.notice.translate()),
-              content: Text('Bạn có chắc chắn muốn hủy thanh toán không?'),
+              content: Text(TKeys.are_you_sure_want_to_end.translate()),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: Text('Tiếp tục'),
+                  child: Text(TKeys.continue_payment.translate()),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop(true);
                     widget.onPaymentCancelled?.call();
                   },
-                  child: Text('Hủy thanh toán'),
+                  child: Text(TKeys.cancel.translate()),
                 ),
               ],
             );
@@ -208,7 +208,7 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Thanh toán',
+                    TKeys.payment.translate(),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   IconButton(
@@ -268,7 +268,7 @@ class _PaymentWebViewBottomSheetState extends State<PaymentWebViewBottomSheet> {
                         }
                       }
                     },
-                    child: const Text('Hủy'),
+                    child: Text(TKeys.cancel.translate()),
                   ),
                 ],
               ),

@@ -34,7 +34,7 @@ class ChargeCarController extends GetxControllerCustom
     with WidgetsBindingObserver {
   late StreamSubscription<List<ScanResult>> scanBlueoothSubScription;
   late StreamSubscription<BluetoothAdapterState> stateBluetoothSubscription;
-  late StreamSubscription<BluetoothConnectionState> stateConnectedSubscription;
+  StreamSubscription<BluetoothConnectionState>? stateConnectedSubscription;
 
   bool isVip = false;
   RxList<PriceModel> listPrice = RxList.empty();
@@ -169,8 +169,8 @@ class ChargeCarController extends GetxControllerCustom
       for (var device in listDevice) {
         await device.disconnect();
       }
-      stateBluetoothSubscription.cancel();
-      stateConnectedSubscription.cancel();
+  stateBluetoothSubscription.cancel();
+  stateConnectedSubscription?.cancel();
     } finally {
       pageEnum.value = ChargeCarPageEnum.CONNECTING;
       Get.back();
@@ -682,6 +682,7 @@ class ChargeCarController extends GetxControllerCustom
 
   // Thời gian còn lại nhấn nút cancel
   String get getTimeStill {
+    if (bookingData == null || bookingData!.dateEnd == null || bookingData!.dateStart == null) return "--:--";
     var time = (bookingData!.dateEnd! - bookingData!.dateStart!) -
         ((DateTime.now().millisecondsSinceEpoch ~/ 1000) -
             bookingData!.dateStart!);
