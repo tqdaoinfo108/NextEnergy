@@ -43,6 +43,7 @@ class ChargeCarController extends GetxControllerCustom
 
   // Name Device
   String nameDevice = "";
+  String originalQRCode = ""; // Lưu mã QR gốc để xác định characteristic
   final int expiredTimeValue =
       HiveHelper.get(Constants.EXPIRED_ON_HARDWARE, defaultvalue: 90);
   // is On Ble
@@ -88,7 +89,8 @@ class ChargeCarController extends GetxControllerCustom
     });
 
     if (Get.arguments is String) {
-      nameDevice = Get.arguments;
+      originalQRCode = Get.arguments; // Lưu mã QR gốc
+      nameDevice = originalQRCode.replaceAll('_1', '').replaceAll('_2', ''); // Remove suffix cho Bluetooth scan
       // chờ bật bluetooth rồi connect
 
       connectDevice().then((value) async {
@@ -99,7 +101,8 @@ class ChargeCarController extends GetxControllerCustom
       });
     } else {
       bookingData = Get.arguments as BookingModel?;
-      nameDevice = bookingData?.hardwareName ?? "";
+      originalQRCode = bookingData?.hardwareName ?? "";
+      nameDevice = originalQRCode.replaceAll('_1', '').replaceAll('_2', '');
       pageEnum.value = ChargeCarPageEnum.CHARGING;
       onInitWhenBookingExist();
       connectDevice(isBackWhenDontConnect: false);
@@ -257,6 +260,11 @@ class ChargeCarController extends GetxControllerCustom
   }
 
   bool isFindBluetoothCharacteristic = true;
+  
+  // Định nghĩa UUID cho các cổng khác nhau
+  static const String CHARACTERISTIC_1_UUID = "e6eae575-4d89-4750-bf3e-c82d6a1cd299";
+  static const String CHARACTERISTIC_2_UUID = "f6eae575-4d89-4750-bf3e-c82d6a1cd29a";
+  
   Future<BluetoothCharacteristic?> findBluetoothCharacteristic(
       {BluetoothDevice? device}) async {
     if (device == null) {
@@ -269,37 +277,80 @@ class ChargeCarController extends GetxControllerCustom
       }
     }
     if (!isFindBluetoothCharacteristic) return null;
+    
     try {
       var discoverServices = await device.discoverServices();
       print("🔍 Found ${discoverServices.length} services");
+      print("🔍 Device name: $nameDevice");
+      print("🔍 Original QR code: $originalQRCode");
 
-      // Duyệt ngược từ service cuối cùng (custom service) lên đầu
-      for (int i = discoverServices.length - 1; i >= 0; i--) {
-        var service = discoverServices[i];
-        print("🔍 Checking service ${i}: ${service.uuid}");
-        print(
-            "🔍 Service has ${service.characteristics.length} characteristics");
-
-        var characteristics = service.characteristics.where(
-            (element) => element.properties.read && element.properties.write);
-
-        for (var item in characteristics) {
-          print(
-              "✅ Found suitable characteristic in custom service: ${item.uuid}");
-          print(
-              "📝 Properties - Read: ${item.properties.read}, Write: ${item.properties.write}, WriteWithoutResponse: ${item.properties.writeWithoutResponse}");
-          print(
-              "🎯 Using characteristic from custom service (index $i): ${item.uuid}");
-          return item;
+      // Xác định UUID target dựa trên mã QR gốc
+      String? targetCharacteristicUuid;
+      if (originalQRCode.endsWith('_1')) {
+        targetCharacteristicUuid = CHARACTERISTIC_1_UUID;
+        print("🎯 QR has _1 suffix, ONLY looking for UUID: $targetCharacteristicUuid");
+        
+        // Chỉ tìm UUID_1, không fallback
+        for (var service in discoverServices) {
+          for (var characteristic in service.characteristics) {
+            if (characteristic.uuid.toString().toLowerCase() == targetCharacteristicUuid.toLowerCase()) {
+              if (characteristic.properties.read && characteristic.properties.write) {
+                print("✅ Found _1 characteristic: ${characteristic.uuid}");
+                return characteristic;
+              } else {
+                print("⚠️ Found _1 UUID but missing read/write properties: ${characteristic.uuid}");
+              }
+            }
+          }
         }
-      }
+        print("❌ _1 UUID not found: $targetCharacteristicUuid");
+        return null;
+        
+      } else if (originalQRCode.endsWith('_2')) {
+        targetCharacteristicUuid = CHARACTERISTIC_2_UUID;
+        print("🎯 QR has _2 suffix, ONLY looking for UUID: $targetCharacteristicUuid");
+        
+        // Chỉ tìm UUID_2, không fallback
+        for (var service in discoverServices) {
+          for (var characteristic in service.characteristics) {
+            if (characteristic.uuid.toString().toLowerCase() == targetCharacteristicUuid.toLowerCase()) {
+              if (characteristic.properties.read && characteristic.properties.write) {
+                print("✅ Found _2 characteristic: ${characteristic.uuid}");
+                return characteristic;
+              } else {
+                print("⚠️ Found _2 UUID but missing read/write properties: ${characteristic.uuid}");
+              }
+            }
+          }
+        }
+        print("❌ _2 UUID not found: $targetCharacteristicUuid");
+        return null;
+        
+      } else {
+        // Không có suffix - chạy bình thường, tìm characteristic có read/write bất kỳ
+        print("🔄 No suffix detected, running normal search for any read/write characteristic");
+        
+        for (int i = 0; i < discoverServices.length; i++) {
+          var service = discoverServices[i];
+          print("🔍 Checking service ${i}: ${service.uuid}");
+          print("🔍 Service has ${service.characteristics.length} characteristics");
 
-      print("❌ No suitable characteristic found in any service");
+          for (var characteristic in service.characteristics) {
+            print("🔍 Found characteristic: ${characteristic.uuid}");
+            print("📝 Properties - Read: ${characteristic.properties.read}, Write: ${characteristic.properties.write}");
+
+            if (characteristic.properties.read && characteristic.properties.write) {
+              print("✅ Found normal characteristic: ${characteristic.uuid}");
+              return characteristic;
+            }
+          }
+        }
+        print("❌ No suitable characteristic found for normal mode");
+        return null;
+      }
     } finally {
       isFindBluetoothCharacteristic = true;
     }
-
-    return null;
   }
 
   // xác thực device

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:v2/model/price_model.dart';
-import 'package:v2/model/response_base.dart';
 import 'package:v2/pages/chagre_car/charge_car_controller.dart';
 import 'package:v2/pages/customs/button.dart';
 
-import '../../model/payment_model.dart';
 import '../../services/localization_service.dart';
-import '../payment/payment_3ds_page.dart';
 
 class ExtTimeChargeCarBottomSheet extends StatelessWidget {
   final ScrollController scrollController;
