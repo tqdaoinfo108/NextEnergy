@@ -289,7 +289,20 @@ enum TKeys {
   active,
   on_back_300s_message,
   this_charger_is_out_of_order,
-  total_slot
+  total_slot,
+  devices_logged_in,
+  device_count,
+  no_devices_logged_in,
+  no_devices_description,
+  last_login,
+  unknown_device,
+  iphone_device,
+  android_device,
+  web_browser,
+  tablet_device,
+  desktop_device,
+  mac_device,
+  mobile_device
 }
 
 //TKeys.hello

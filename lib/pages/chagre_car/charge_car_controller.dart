@@ -286,66 +286,35 @@ class ChargeCarController extends GetxControllerCustom
 
       // Xác định UUID target dựa trên mã QR gốc
       String? targetCharacteristicUuid;
-      if (originalQRCode.endsWith('_1')) {
-        targetCharacteristicUuid = CHARACTERISTIC_1_UUID;
-        print("🎯 QR has _1 suffix, ONLY looking for UUID: $targetCharacteristicUuid");
-        
-        // Chỉ tìm UUID_1, không fallback
-        for (var service in discoverServices) {
-          for (var characteristic in service.characteristics) {
-            if (characteristic.uuid.toString().toLowerCase() == targetCharacteristicUuid.toLowerCase()) {
-              if (characteristic.properties.read && characteristic.properties.write) {
-                print("✅ Found _1 characteristic: ${characteristic.uuid}");
-                return characteristic;
-              } else {
-                print("⚠️ Found _1 UUID but missing read/write properties: ${characteristic.uuid}");
-              }
-            }
-          }
-        }
-        print("❌ _1 UUID not found: $targetCharacteristicUuid");
-        return null;
-        
-      } else if (originalQRCode.endsWith('_2')) {
+      if (originalQRCode.endsWith('_2')) {
         targetCharacteristicUuid = CHARACTERISTIC_2_UUID;
-        print("🎯 QR has _2 suffix, ONLY looking for UUID: $targetCharacteristicUuid");
         
         // Chỉ tìm UUID_2, không fallback
         for (var service in discoverServices) {
           for (var characteristic in service.characteristics) {
             if (characteristic.uuid.toString().toLowerCase() == targetCharacteristicUuid.toLowerCase()) {
               if (characteristic.properties.read && characteristic.properties.write) {
-                print("✅ Found _2 characteristic: ${characteristic.uuid}");
                 return characteristic;
               } else {
-                print("⚠️ Found _2 UUID but missing read/write properties: ${characteristic.uuid}");
               }
             }
           }
         }
-        print("❌ _2 UUID not found: $targetCharacteristicUuid");
         return null;
         
       } else {
-        // Không có suffix - chạy bình thường, tìm characteristic có read/write bất kỳ
-        print("🔄 No suffix detected, running normal search for any read/write characteristic");
-        
-        for (int i = 0; i < discoverServices.length; i++) {
-          var service = discoverServices[i];
-          print("🔍 Checking service ${i}: ${service.uuid}");
-          print("🔍 Service has ${service.characteristics.length} characteristics");
-
+        targetCharacteristicUuid = CHARACTERISTIC_1_UUID;
+        // Chỉ tìm UUID_1, không fallback
+        for (var service in discoverServices) {
           for (var characteristic in service.characteristics) {
-            print("🔍 Found characteristic: ${characteristic.uuid}");
-            print("📝 Properties - Read: ${characteristic.properties.read}, Write: ${characteristic.properties.write}");
-
-            if (characteristic.properties.read && characteristic.properties.write) {
-              print("✅ Found normal characteristic: ${characteristic.uuid}");
-              return characteristic;
+            if (characteristic.uuid.toString().toLowerCase() == targetCharacteristicUuid.toLowerCase()) {
+              if (characteristic.properties.read && characteristic.properties.write) {
+                return characteristic;
+              } else {
+              }
             }
           }
         }
-        print("❌ No suitable characteristic found for normal mode");
         return null;
       }
     } finally {

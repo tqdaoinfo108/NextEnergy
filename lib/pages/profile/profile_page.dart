@@ -277,20 +277,20 @@ class _ProfilePageState extends State<ProfilePage> {
             TKeys.view_membership_details.translate(),
             () => Get.toNamed("/member_code"),
           ),
-          _buildDivider(),
-          _buildModernMenuItem(
-            theme,
-            Icons.payment_outlined,
-            TKeys.payment_method.translate(),
-            TKeys.manage_payment_methods.translate(),
-            () async {
-              String? result = await Get.toNamed("/pin_code_form",
-                  arguments: "/payment_list") as String?;
-              if (result != null && result.isNotEmpty) {
-                Get.toNamed("/payment_list");
-              }
-            },
-          ),
+          // _buildDivider(),
+          // _buildModernMenuItem(
+          //   theme,
+          //   Icons.payment_outlined,
+          //   TKeys.payment_method.translate(),
+          //   TKeys.manage_payment_methods.translate(),
+          //   () async {
+          //     String? result = await Get.toNamed("/pin_code_form",
+          //         arguments: "/payment_list") as String?;
+          //     if (result != null && result.isNotEmpty) {
+          //       Get.toNamed("/payment_list");
+          //     }
+          //   },
+          // ),
           _buildDivider(),
           _buildModernMenuItem(
             theme,

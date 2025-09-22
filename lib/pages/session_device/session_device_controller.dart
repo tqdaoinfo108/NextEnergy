@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 
-import '../../model/notification_model.dart';
 import '../../model/response_base.dart';
 import '../../services/getxController.dart';
 import '../../services/https.dart';
