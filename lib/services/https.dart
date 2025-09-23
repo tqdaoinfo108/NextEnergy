@@ -23,9 +23,9 @@ class HttpHelper {
       String phone, String password, String phoneArea) async {
     try {
       final deviceInfoPlugin = DeviceInfoPlugin();
-      await FirebaseMessaging.instance.deleteToken();
-      var token = await FirebaseMessaging.instance.getToken();
-      HiveHelper.put(Constants.FIREBASE_TOKEN, token);
+      // await FirebaseMessaging.instance.deleteToken();
+      // var token = await FirebaseMessaging.instance.getToken();
+      HiveHelper.put(Constants.FIREBASE_TOKEN, "1234");
 
       var deviceName = (await deviceInfoPlugin.deviceInfo).data;
       var deviceNameString = Platform.isAndroid
@@ -36,7 +36,7 @@ class HttpHelper {
         "PhoneArea": phoneArea,
         "UUserID": phone,
         "PassWord": password,
-        "TokenKey": token,
+        "TokenKey": "!2314",
         "DeviceName": deviceNameString
       });
       if (response != null) {

@@ -6,7 +6,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:flutter_credit_card/extension.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:crypto/crypto.dart';
@@ -361,7 +360,7 @@ class ChargeCarController extends GetxControllerCustom
       print("📡 Received from ESP32: '$rawValue'");
       print("📡 Expected auth value: '$authenValue'");
 
-      if (rawValue.isNotNullAndNotEmpty) {
+      if (rawValue.isNotEmpty) {
         // nếu gửi mã authen trùng nhận về > back
         if (rawValue.toLowerCase() == authenValue.toLowerCase() &&
             bookingData == null) {

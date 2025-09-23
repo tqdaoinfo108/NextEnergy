@@ -16,7 +16,6 @@ import 'package:v2/pages/otp/otp_controller.dart';
 import 'package:v2/pages/otp/otp_page.dart';
 import 'package:v2/pages/payment/payment_3ds_confirm_page.dart';
 import 'package:v2/pages/payment/payment_list.dart';
-import 'package:v2/pages/pin_auth/pin_auth_page.dart';
 import 'package:v2/pages/profile/profile_page.dart';
 import 'package:v2/pages/profile_change_pass_page/profile_change_pass_controller.dart';
 import 'package:v2/pages/profile_detail/profile_detail_controller.dart';
@@ -30,7 +29,6 @@ import 'package:v2/utils/const.dart';
 
 import '../pages/intro/intro_page.dart';
 import '../pages/member_code/member_code_page.dart';
-import '../pages/payment/payment_form_controller.dart';
 import '../pages/profile_change_pass_page/profile_change_pass_page.dart';
 import '../services/base_hive.dart';
 
@@ -98,7 +96,6 @@ get pageList => [
       GetPage(name: '/no_internet', page: () => const NoInternetPage()),
       GetPage(name: '/payment_list', page: () => const PaymentListPage()),
     
-      GetPage(name: '/pin_code_form', page: () => const PinAuthPage()),
       GetPage(
           name: '/session_device',
           page: () => const SessionDevicePage(),

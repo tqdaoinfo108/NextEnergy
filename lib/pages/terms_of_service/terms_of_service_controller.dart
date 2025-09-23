@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:v2/services/localization_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../model/terms_of_service.dart';

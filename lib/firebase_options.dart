@@ -58,11 +58,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyChaTnNl9X8poL1oo0z-VTzfWs4nLm63ww',
-    appId: '1:905212334909:ios:d30a478a167fce3fd22b54',
-    messagingSenderId: '905212334909',
-    projectId: 'takara-charging',
-    storageBucket: 'takara-charging.appspot.com',
-    iosBundleId: 'jp.takaraservice.evcharge',
+    apiKey: 'AIzaSyB0hyWjDPMndlvkRLXJiTrmiJ_Fa5gre1E',
+    appId: '1:1004212122807:ios:f2e067a64181b20ba08932',
+    messagingSenderId: '1004212122807',
+    projectId: 'next-energy-64a46',
+    storageBucket: 'next-energy-64a46.firebasestorage.app',
+    iosBundleId: 'vn.gbsofit.charger',
   );
 }

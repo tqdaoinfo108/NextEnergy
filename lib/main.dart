@@ -30,10 +30,10 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
    // Request camera permission and prepare scanner
-  final hasPermission = await UltraQrScanner.requestPermissions();
-  if (hasPermission) {
-    await UltraQrScanner.prepareScanner();
-  }
+  // final hasPermission = await UltraQrScanner.requestPermissions();
+  // if (hasPermission) {
+  //   await UltraQrScanner.prepareScanner();
+  // }
 
   EasyLoading.instance
     ..maskColor = Colors.black.withOpacity(0.4)
