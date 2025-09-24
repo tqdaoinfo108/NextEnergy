@@ -29,23 +29,23 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSBluetoothAlwaysUsageDescription</key>
-		<string>アプリはハードウェアに接続し、充電を実行するためにアクセスする必要があります</string>
+		<string>Ứng dụng cần truy cập Bluetooth để kết nối với thiết bị phần cứng và thực hiện sạc</string>
 		<key>NSBluetoothPeripheralUsageDescription</key>
-		<string>アプリはハードウェアに接続し、充電を実行するためにアクセスする必要があります</string>
+		<string>Ứng dụng cần truy cập Bluetooth để kết nối với thiết bị phần cứng và thực hiện sạc</string>
 		<key>NSCameraUsageDescription</key>
-		<string>アプリでは QR コードを読み取るかプロフィール写真を更新するためにカメラが必要です</string>
+		<string>Ứng dụng cần quyền truy cập camera để quét mã QR hoặc cập nhật ảnh đại diện</string>
 		<key>NSFaceIDUsageDescription</key>
-		<string>重要な情報を閲覧するには認証が必要です</string>
+		<string>Cần xác thực để xem thông tin quan trọng</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>アプリが最寄りの充電ステーションを検索するには現在地が必要です</string>
+		<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm trạm sạc gần nhất</string>
 		<key>NSLocationAlwaysUsageDescription</key>
-		<string>アプリが最寄りの充電ステーションを検索するには現在地が必要です</string>
+		<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm trạm sạc gần nhất</string>
 		<key>NSLocationUsageDescription</key>
-		<string>アプリが最寄りの充電ステーションを検索するには現在地が必要です</string>
+		<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm trạm sạc gần nhất</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>アプリが最寄りの充電ステーションを検索するには現在地が必要です</string>
+		<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm trạm sạc gần nhất</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>QRコードを読み取るか、プロフィール写真を更新するには、アプリにフォトギャラリーが必要です</string>
+		<string>Ứng dụng cần quyền truy cập thư viện ảnh để quét mã QR hoặc cập nhật ảnh đại diện</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIBackgroundModes</key>
