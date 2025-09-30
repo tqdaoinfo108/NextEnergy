@@ -61,6 +61,12 @@ class ChargeCarController extends GetxControllerCustom
   bool get isAvailable =>
       isOnBluetooth && isConnectedDevice && isAuthorize.value;
 
+  // Smart connection management
+  bool _shouldMaintainConnection = false;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 3;
+
   // Thiết bị phần cứng
   Rx<ChargeCarPageEnum> pageEnum = Rx(ChargeCarPageEnum.CONNECTING);
 
@@ -143,6 +149,10 @@ class ChargeCarController extends GetxControllerCustom
             pageEnum.value == ChargeCarPageEnum.CHARGING &&
             isContinueCompleteBooking) {
           isContinueCompleteBooking = false;
+          
+          // Tắt smart reconnect vì charging đã hoàn thành
+          _disableConnectionMaintenance();
+          
           EasyLoading.showSuccess(
               TKeys.complete_charging_end_processing_auto.translate(),
               duration: const Duration(seconds: 5));
@@ -161,6 +171,10 @@ class ChargeCarController extends GetxControllerCustom
 
   back() async {
     try {
+      // Dừng smart reconnect khi thoát
+      _shouldMaintainConnection = false;
+      _stopReconnectTimer();
+      
       bookingData = null;
       isauthorizeDevice = false;
       await FlutterBluePlus.stopScan();
@@ -168,12 +182,56 @@ class ChargeCarController extends GetxControllerCustom
       for (var device in listDevice) {
         await device.disconnect();
       }
-  stateBluetoothSubscription.cancel();
-  stateConnectedSubscription?.cancel();
+      stateBluetoothSubscription.cancel();
+      stateConnectedSubscription?.cancel();
     } finally {
       pageEnum.value = ChargeCarPageEnum.CONNECTING;
       Get.back();
     }
+  }
+
+  // Smart reconnect logic
+  void _handleSmartReconnect() {
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      print("🔄 Max reconnect attempts reached, stopping...");
+      _shouldMaintainConnection = false;
+      return;
+    }
+
+    _reconnectAttempts++;
+    print("🔄 Smart reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts");
+
+    _reconnectTimer = Timer(Duration(seconds: 2 + _reconnectAttempts), () async {
+      if (_shouldMaintainConnection && !isConnectedDevice) {
+        print("🔄 Attempting smart reconnect...");
+        try {
+          await connectDevice(timeoutSecond: 5);
+        } catch (e) {
+          print("❌ Smart reconnect failed: $e");
+          _handleSmartReconnect(); // Retry
+        }
+      }
+    });
+  }
+
+  void _stopReconnectTimer() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempts = 0;
+  }
+
+  // Enable connection maintenance during charging
+  void _enableConnectionMaintenance() {
+    _shouldMaintainConnection = true;
+    _reconnectAttempts = 0;
+    print("🔗 Connection maintenance enabled for charging session");
+  }
+
+  // Disable connection maintenance
+  void _disableConnectionMaintenance() {
+    _shouldMaintainConnection = false;
+    _stopReconnectTimer();
+    print("🔗 Connection maintenance disabled");
   }
 
   // kết nối device
@@ -194,7 +252,8 @@ class ChargeCarController extends GetxControllerCustom
 
         ScanResult result = results.last;
         if (result.device.platformName == nameDevice) {
-          await result.device.connect(autoConnect: true, mtu: null);
+          // Sử dụng autoConnect = false để tránh reconnect liên tục
+          await result.device.connect(autoConnect: false, mtu: null);
           if (Platform.isAndroid) {
             result.device.requestMtu(512);
           }
@@ -208,6 +267,11 @@ class ChargeCarController extends GetxControllerCustom
             if (state == BluetoothConnectionState.disconnected) {
               isAuthorize.value = false;
               isauthorizeDevice = false;
+              
+              // Smart reconnect logic - chỉ reconnect khi đang sạc
+              if (_shouldMaintainConnection && pageEnum.value == ChargeCarPageEnum.CHARGING) {
+                _handleSmartReconnect();
+              }
               return;
             }
 
@@ -486,6 +550,10 @@ class ChargeCarController extends GetxControllerCustom
 
               await c.write(bytesPAID);
               print("🔥 Written 'PAID' to BLE device");
+              
+              // Enable smart reconnect cho charging session
+              _enableConnectionMaintenance();
+              
               onInitWhenBookingExist();
               pageEnum.value = ChargeCarPageEnum.CHARGING;
               print("🔥 Successfully changed pageEnum to CHARGING");
@@ -527,6 +595,9 @@ class ChargeCarController extends GetxControllerCustom
   // sạc hoàn thành
   Future<void> onBookingComplete() async {
     try {
+      // Tắt smart reconnect vì booking đã complete
+      _disableConnectionMaintenance();
+      
       // không có thiết bị kết nối
       if (!isAvailable) {
         EasyLoading.showInfo(TKeys.fail_again2.translate());
@@ -854,5 +925,12 @@ class ChargeCarController extends GetxControllerCustom
       print(
           'ChargeCarController: Error during Bluetooth enable and reconnect: $e');
     }
+  }
+
+  @override
+  void onClose() {
+    // Tắt smart reconnect khi controller bị dispose
+    _disableConnectionMaintenance();
+    super.onClose();
   }
 }
