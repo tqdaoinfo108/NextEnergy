@@ -35,7 +35,7 @@ dependencies:
   internet_connection_checker: ^1.0.0+1
   connectivity_plus: ^5.0.2
   get: ^4.6.5
-  ultra_qr_scanner: ^2.1.0
+  mobile_scanner: ^7.1.0
   webview_flutter: ^4.13.0
   webview_flutter_wkwebview: ^3.23.1
   lottie: ^3.0.0

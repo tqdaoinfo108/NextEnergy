@@ -10,7 +10,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:ultra_qr_scanner/ultra_qr_scanner.dart';
 import 'package:v2/routers/router.dart';
 import 'package:v2/services/https.dart';
 import 'package:v2/transactions/my_transactions.dart';

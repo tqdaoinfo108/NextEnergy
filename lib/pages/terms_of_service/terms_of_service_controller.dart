@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -15,9 +17,9 @@ class TermsOfServiceBind extends Bindings {
 
 class TermsOfServiceController extends GetxControllerCustom {
   TermsOfUseModel data = TermsOfUseModel()
-    ..agree = "上記のすべての条件に同意します"
-    ..confirm = "確認"
-    ..title = "NextEnergy";
+    ..agree = "Tôi đồng ý với tất cả các điều khoản trên"
+    ..confirm = "Đồng ý"
+    ..title = "Điều khoản sử dụng & Quyền riêng Tư";
   DateTime time = DateTime.now();
   var isCheckTermOfUse = false.obs;
   RxBool isLoadError = RxBool(false);
@@ -43,18 +45,11 @@ class TermsOfServiceController extends GetxControllerCustom {
     try {
       var configs = await HttpHelper.getConfig();
       if (configs != null && configs.data != null) {
-        var config = configs.data!.firstWhere((x) => x.configKey == "IsTest");
-        // data = TermsOfUseBaseModel.fromJson(jsonDecode(config.configValue!))
-        //     .data!
-        //     .firstWhere((element) => element.language == "jp");
-        isTest.value = config.configValue?.toLowerCase() == 'true';
+        var config = configs.data!.firstWhere((x) => x.configKey == "TermsOfUse");
+        data = TermsOfUseBaseModel.fromJson(jsonDecode(config.configValue!))
+            .data!
+            .firstWhere((element) => element.language == "vi");
         await Get.updateLocale(Locale(isTest.value ? "en" : "vi", ""));
-        if (isTest.value) {
-          data = TermsOfUseModel()
-            ..agree = "I agree to all of the above terms"
-            ..confirm = "Confirm"
-            ..title = "NextEnergy";
-        }
       }
     } catch (e) {
     } finally {

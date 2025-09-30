@@ -18,6 +18,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B3A1678C2E8C3D1E00DD22D1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3B819F92E81B4B5001B2567 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0F7C1C60107CFDFC0652DEA0F788BEEB;
+			remoteInfo = mobile_scanner;
+		};
+		B3A1678E2E8C3D1E00DD22D1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3B819F92E81B4B5001B2567 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 62DECD1B26547A428514C464CF394E2E;
+			remoteInfo = "mobile_scanner-mobile_scanner_privacy";
+		};
 		B3B81A322E81B5BE001B2567 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B3B819F92E81B4B5001B2567 /* Pods.xcodeproj */;
@@ -326,13 +340,6 @@
 			remoteGlobalIDString = 31366E63B5E5AB7409D6BB2894C2C7C9;
 			remoteInfo = smart_auth;
 		};
-		B3B81A922E81B5BE001B2567 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B3B819F92E81B4B5001B2567 /* Pods.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 40D9C515BDB25FAB6822C5BA3841DE36;
-			remoteInfo = ultra_qr_scanner;
-		};
 		B3B81B062E81BD75001B2567 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B3B819F92E81B4B5001B2567 /* Pods.xcodeproj */;
@@ -490,6 +497,8 @@
 				B3B81A712E81B5BE001B2567 /* image_picker_ios_privacy.bundle */,
 				B3B81A732E81B5BE001B2567 /* IosAwnCore.framework */,
 				B3B81A752E81B5BE001B2567 /* map_launcher.framework */,
+				B3A1678D2E8C3D1E00DD22D1 /* mobile_scanner.framework */,
+				B3A1678F2E8C3D1E00DD22D1 /* mobile_scanner_privacy.bundle */,
 				B3B81A772E81B5BE001B2567 /* nanopb.framework */,
 				B3B81A792E81B5BE001B2567 /* nanopb_Privacy.bundle */,
 				B3B81A7F2E81B5BE001B2567 /* path_provider_foundation.framework */,
@@ -502,7 +511,6 @@
 				B3B81A8D2E81B5BE001B2567 /* Reachability.framework */,
 				B3B81A8F2E81B5BE001B2567 /* ReachabilitySwift.bundle */,
 				B3B81A912E81B5BE001B2567 /* smart_auth.framework */,
-				B3B81A932E81B5BE001B2567 /* ultra_qr_scanner.framework */,
 				B3B81B072E81BD75001B2567 /* webview_flutter_wkwebview.framework */,
 				B3B81B092E81BD75001B2567 /* webview_flutter_wkwebview_privacy.bundle */,
 			);
@@ -583,6 +591,20 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		B3A1678D2E8C3D1E00DD22D1 /* mobile_scanner.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = mobile_scanner.framework;
+			remoteRef = B3A1678C2E8C3D1E00DD22D1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		B3A1678F2E8C3D1E00DD22D1 /* mobile_scanner_privacy.bundle */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = mobile_scanner_privacy.bundle;
+			remoteRef = B3A1678E2E8C3D1E00DD22D1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		B3B81A332E81B5BE001B2567 /* awesome_notifications.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
@@ -891,13 +913,6 @@
 			remoteRef = B3B81A902E81B5BE001B2567 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		B3B81A932E81B5BE001B2567 /* ultra_qr_scanner.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = ultra_qr_scanner.framework;
-			remoteRef = B3B81A922E81B5BE001B2567 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		B3B81B072E81BD75001B2567 /* webview_flutter_wkwebview.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
@@ -1112,7 +1127,7 @@
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = DGP75FL2F3;
 				ENABLE_BITCODE = "$(inherited)";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1251,7 +1266,7 @@
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = DGP75FL2F3;
 				ENABLE_BITCODE = "$(inherited)";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1282,7 +1297,7 @@
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = DGP75FL2F3;
 				ENABLE_BITCODE = "$(inherited)";
 				INFOPLIST_FILE = Runner/Info.plist;

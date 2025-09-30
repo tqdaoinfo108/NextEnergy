@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:ultra_qr_scanner/ultra_qr_scanner.dart';
-import 'package:ultra_qr_scanner/ultra_qr_scanner_widget.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:v2/pages/customs/appbar.dart';
 import 'package:v2/pages/customs/page_life_cycle.dart';
 import 'package:v2/services/localization_service.dart';
@@ -16,187 +14,99 @@ class ScanQRCodeBind extends Bindings {
 }
 
 class ScanQRCodeController extends GetxController {
-  bool isNextToPage = true;
-  RxBool isScan = false.obs;
-  RxBool isFlashOn = false.obs;
-  bool _isDialogShowing = false; // Flag để tránh hiện popup nhiều lần
+  final RxBool isScan = false.obs;
 
-  Future<void> _requestPermissions() async {
-    await [Permission.camera].request();
-  }
+  late final MobileScannerController scannerController;
+
+  bool _isHandlingResult = false;
+  bool _isDialogShowing = false;
+
+  bool get isDialogShowing => _isDialogShowing;
 
   @override
   void onInit() {
     super.onInit();
-    isNextToPage = true;
-    _bootstrap();
+    scannerController = MobileScannerController(
+      autoStart: false,
+      facing: CameraFacing.back,
+      returnImage: false,
+      formats: const [BarcodeFormat.qrCode],
+      detectionSpeed: DetectionSpeed.noDuplicates,
+    );
   }
 
   @override
   void onReady() {
     super.onReady();
-    // Reset trạng thái khi quay lại trang
-    isNextToPage = true;
-    isScan.value = false;
-    isFlashOn.value = false;
-    _isDialogShowing = false;
-    
-    // Force stop scanner để đảm bảo clean state
-    UltraQrScanner.stopScanner().catchError((e) {
-      print("Error stopping scanner in onReady: $e");
-    });
-  }
-
-  @override
-  void onClose() {
-    // Đảm bảo scanner được dừng khi controller bị dispose
-    UltraQrScanner.stopScanner();
-    super.onClose();
-  }
-
-  Future<void> _bootstrap() async {
-    await _requestPermissions();
-    // (khuyến nghị) chuẩn bị scanner trước cho lần mở đầu nhanh hơn
-    await UltraQrScanner.prepareScanner(); // optional nhưng tốt
     _showDialog();
   }
 
-  Future<void> onQrDetected(String? code) async {
-    if (code == null || code.isEmpty || !isNextToPage) return;
+  Future<void> onBarcodeDetected(BarcodeCapture capture) async {
+    if (_isHandlingResult) return;
 
-    if (code.toLowerCase().contains('evs-')) {
-      isNextToPage = false;
+    final rawValue = capture.barcodes
+        .map((barcode) => barcode.rawValue)
+        .firstWhere(
+          (value) => value != null && value.trim().isNotEmpty,
+          orElse: () => null,
+        );
+
+    if (rawValue == null) return;
+    if (rawValue.trim().isEmpty) return;
+
+    final normalizedCode = rawValue.trim();
+    _isHandlingResult = true;
+
+    if (normalizedCode.toLowerCase().contains('evs-')) {
       EasyLoading.show();
-      await Future.delayed(const Duration(milliseconds: 500));
-      EasyLoading.dismiss();
+      try {
+        await scannerController.stop();
+      } catch (e) {
+        print('Error stopping scanner after valid QR: $e');
+      } finally {
+        EasyLoading.dismiss();
+      }
 
-      // Dừng camera (autoStop cũng dừng, nhưng mình chủ động cho chắc)
-      await UltraQrScanner.stopScanner();
-
-      Get.offNamed("/charge_car", arguments: code);
+      isScan.value = false;
+      _isHandlingResult = false;
+      Get.offNamed('/charge_car', arguments: normalizedCode);
       return;
     }
 
-    // QR không hợp lệ - dừng scanner tạm thời để hiển thị lỗi
-    isNextToPage = false;
-    await UltraQrScanner.stopScanner();
-    
     EasyLoading.showError(
       TKeys.qr_code_invalid.translate(),
       duration: const Duration(seconds: 2),
     );
-    
-    // Chờ một chút để user đọc message, sau đó restart scanner
+
     await Future.delayed(const Duration(seconds: 2));
-    
-    // Restart scanner để tiếp tục quét
+    _isHandlingResult = false;
+  }
+
+  Future<void> handlePageDisappear() async {
     try {
-      await UltraQrScanner.prepareScanner();
-      isNextToPage = true; // Cho phép quét lại
+      await scannerController.stop();
     } catch (e) {
-      print("Error restarting scanner after invalid QR: $e");
-      // Nếu không restart được, reset về trạng thái ban đầu
-      isScan.value = false;
-      isNextToPage = true;
+      print('Error stopping scanner on disappear: $e');
     }
-  }
-
-  Future<void> toggleFlash() async {
-    // Tự giữ trạng thái đèn, vì package chỉ cung cấp toggleFlash(bool)
-    isFlashOn.value = !isFlashOn.value;
-    await UltraQrScanner.toggleFlash(isFlashOn.value); // đúng API
-  }
-
-  // Method để restart scanner khi quay lại trang
-  Future<void> restartScanner() async {
-    try {
-      await UltraQrScanner.stopScanner();
-      await Future.delayed(const Duration(milliseconds: 500)); // Tăng delay để đảm bảo camera release
-      await UltraQrScanner.prepareScanner();
-      
-      // Reset trạng thái
-      isNextToPage = true;
-      isFlashOn.value = false;
-      isScan.value = false;
-      _isDialogShowing = false;
-      
-      // Hiện dialog một cách an toàn
-      _showDialogSafely();
-      
-    } catch (e) {
-      print("Error restarting scanner: $e");
-      // Force reset nếu có lỗi
-      isNextToPage = true;
-      isFlashOn.value = false;
-      isScan.value = false;
-      _isDialogShowing = false;
-    }
-  }
-
-  // Method để force restart khi camera bị stuck
-  Future<void> forceRestartScanner() async {
-    try {
-      isNextToPage = false;
-      isScan.value = false;
-      
-      // Force stop multiple times nếu cần
-      await UltraQrScanner.stopScanner();
-      await Future.delayed(const Duration(milliseconds: 300));
-      await UltraQrScanner.stopScanner();
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Restart camera permission nếu cần
-      await _requestPermissions();
-      
-      // Prepare lại scanner
-      await UltraQrScanner.prepareScanner();
-      
-      // Reset trạng thái và hiện dialog
-      isNextToPage = true;
-      isFlashOn.value = false;
-      _isDialogShowing = false;
-      
-      // Hiện dialog để user có thể scan lại
-      if (Get.context != null) {
-        showScanDialog();
-      }
-      
-    } catch (e) {
-      print("Error force restarting scanner: $e");
-      // Reset về trạng thái ban đầu
-      isNextToPage = true;
-      isFlashOn.value = false;
-      isScan.value = false;
-      _isDialogShowing = false;
-    }
-  }
-
-  // Method để hiện dialog một cách an toàn, tránh duplicate
-  Future<void> _showDialogSafely() async {
-    if (_isDialogShowing || isScan.value) return;
-    
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (Get.context != null && !_isDialogShowing && !isScan.value) {
-      showScanDialog();
-    }
-  }
-
-  @override
-  void dispose() {
-    UltraQrScanner.stopScanner();
-    super.dispose();
+    isScan.value = false;
+    _isHandlingResult = false;
   }
 
   Future<void> showScanDialog() async {
-    if (_isDialogShowing) return; // Tránh hiện dialog nhiều lần
-    
+    if (_isDialogShowing) return;
+
+    final context = Get.context;
+    if (context == null) {
+      _isDialogShowing = false;
+      return;
+    }
+
     _isDialogShowing = true;
-    await Future.delayed(const Duration(milliseconds: 50));
-    
-    return showDialog<void>(
-      context: Get.context!,
+
+    await showDialog<void>(
+      context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
@@ -206,7 +116,7 @@ class ScanQRCodeController extends GetxController {
             title: Text(
               TKeys.notice.translate(),
               textAlign: TextAlign.center,
-              style: Theme.of(context)
+              style: Theme.of(dialogContext)
                   .textTheme
                   .titleLarge!
                   .copyWith(fontWeight: FontWeight.bold),
@@ -217,15 +127,17 @@ class ScanQRCodeController extends GetxController {
                   Text(
                     TKeys.do_you_have_charge_flag_your_car.translate(),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(dialogContext).textTheme.bodyMedium,
                   ),
                 ],
               ),
             ),
             actions: <Widget>[
               TextButton(
-                child: Text(TKeys.no_scan.translate(),
-                    style: Theme.of(context).textTheme.bodyMedium),
+                child: Text(
+                  TKeys.no_scan.translate(),
+                  style: Theme.of(dialogContext).textTheme.bodyMedium,
+                ),
                 onPressed: () {
                   _isDialogShowing = false;
                   Get.back();
@@ -235,40 +147,40 @@ class ScanQRCodeController extends GetxController {
               ElevatedButton(
                 child: Text(TKeys.yes.translate()),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: Theme.of(dialogContext).primaryColor,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () async {
                   _isDialogShowing = false;
+                  _isHandlingResult = false;
                   Get.back();
-                  
-                  // Reset trạng thái và restart scanner
-                  isNextToPage = true;
-                  isFlashOn.value = false;
-                  
-                  // Dừng scanner cũ (nếu có) trước khi start mới
-                  await UltraQrScanner.stopScanner();
-                  await Future.delayed(const Duration(milliseconds: 100));
-                  
-                  // Prepare lại scanner và hiện widget
-                  await UltraQrScanner.prepareScanner();
                   isScan.value = true;
+                  try {
+                    await scannerController.start();
+                  } catch (e) {
+                    print('Error starting scanner: $e');
+                  }
                 },
               ),
             ],
           ),
         );
       },
-    ).then((_) {
-      _isDialogShowing = false; // Đảm bảo flag được reset khi dialog đóng
+    ).whenComplete(() {
+      _isDialogShowing = false;
     });
   }
 
   Future<void> _showDialog() async {
-    // Chỉ hiện dialog nếu chưa có dialog nào đang hiện
     if (!_isDialogShowing) {
-      return showScanDialog();
+      await showScanDialog();
     }
+  }
+
+  @override
+  void onClose() {
+    scannerController.dispose();
+    super.onClose();
   }
 }
 
@@ -279,118 +191,104 @@ class ScanQRCodePage extends GetView<ScanQRCodeController> {
   Widget build(BuildContext context) {
     return PageLifecycle(
       stateChanged: (bool appeared) {
-        // Khi trang xuất hiện lại (back từ trang khác)
-        if (appeared && !controller._isDialogShowing && !controller.isScan.value) {
-          controller.restartScanner();
+        final ctrl = Get.isRegistered<ScanQRCodeController>()
+            ? Get.find<ScanQRCodeController>()
+            : null;
+        if (ctrl == null) return;
+
+        if (appeared) {
+          if (!ctrl.isScan.value && !ctrl.isDialogShowing) {
+            ctrl.showScanDialog();
+          }
+        } else {
+          ctrl.handlePageDisappear();
         }
       },
-      child: Obx(() => Scaffold(
-            appBar: AppBarCustom(
-              title: Text(
-                TKeys.scan_qr.translate(),
-                style: Theme.of(context).textTheme.headlineSmall,
+      child: Obx(
+        () => Scaffold(
+          appBar: AppBarCustom(
+            title: Text(
+              TKeys.scan_qr.translate(),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ),
+          body: SafeArea(
+            child: controller.isScan.value
+                ? _buildScannerView(context)
+                : _buildIdleState(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScannerView(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            DecoratedBox(
+              decoration: const BoxDecoration(color: Colors.black),
+              child: MobileScanner(
+                controller: controller.scannerController,
+                onDetect: controller.onBarcodeDetected,
+                fit: BoxFit.cover,
               ),
             ),
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.centerFloat,
-            floatingActionButton: controller.isScan.value 
-                ? FloatingActionButton(
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                    ),
-                    elevation: 5,
-                    onPressed: controller.toggleFlash,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: Icon(
-                      controller.isFlashOn.value ? Icons.flash_off : Icons.flash_on, 
-                      color: Colors.white
-                    ),
-                  )
-                : FloatingActionButton(
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                    ),
-                    elevation: 5,
-                    onPressed: () {
-                      // Restart scanner khi user nhấn nút
-                      controller.showScanDialog();
-                    },
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: const Icon(Icons.qr_code_scanner, color: Colors.white),
+            Align(
+              alignment: Alignment.center,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 3,
                   ),
-            body: Stack(
-              children: [
-                if (controller.isScan.value)
-                  // Dùng widget chính xác theo docs
-                  UltraQrScannerWidget(
-                    onQrDetected: controller.onQrDetected,
-                    autoStart: true,             // vào là quét ngay
-                    autoStop: false,             // không tự động dừng để có thể quét liên tục
-                    showStartStopButton: false,  // ẩn nút manual
-                    showFlashToggle: false,      // mình đã có FAB riêng
-                  ),
-                
-                // Nút restart camera khi bị stuck (góc trên phải)
-                if (controller.isScan.value)
-                  Positioned(
-                    top: 20,
-                    right: 20,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          controller.forceRestartScanner();
-                        },
-                        icon: const Icon(
-                          Icons.refresh,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        tooltip: "Restart camera",
-                      ),
-                    ),
-                  ),
-                
-                // Hiện thị message khi chưa scan
-                if (!controller.isScan.value)
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.qr_code_scanner,
-                          size: 100,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          TKeys.scan_qr.translate(),
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Colors.grey.shade600
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            controller.showScanDialog();
-                          },
-                          icon: const Icon(Icons.qr_code_scanner),
-                          label: Text(TKeys.scan_qr.translate()),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
             ),
-          )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIdleState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.qr_code_scanner,
+            size: 100,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            TKeys.scan_qr.translate(),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: controller.showScanDialog,
+            icon: const Icon(Icons.qr_code_scanner),
+            label: Text(TKeys.scan_qr.translate()),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

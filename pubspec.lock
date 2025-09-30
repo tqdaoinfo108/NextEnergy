@@ -981,6 +981,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
+  mobile_scanner:
+    dependency: "direct main"
+    description:
+      name: mobile_scanner
+      sha256: "5e7e09d904dc01de071b79b3f3789b302b0ed3c9c963109cd3f83ad90de62ecf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.1.2"
   nm:
     dependency: transitive
     description:
@@ -1306,14 +1314,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  ultra_qr_scanner:
-    dependency: "direct main"
-    description:
-      name: ultra_qr_scanner
-      sha256: f344e26845ed85c529b942f0dd432bacf90685828089e8f6effae552ed338060
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   universal_io:
     dependency: transitive
     description:
