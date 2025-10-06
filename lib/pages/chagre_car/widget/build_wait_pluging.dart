@@ -3,7 +3,6 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:v2/pages/chagre_car/charge_car_controller.dart';
 
 import '../../../services/localization_service.dart';
-import '../../../utils/const.dart';
 import '../../customs/count_down.dart';
 
 Padding buildWaitingConnectPlugging(

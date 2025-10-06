@@ -44,5 +44,3 @@ class BleStateEnum {
   static String isBeingStarted = "isBeingStarted";
   static String loading = "loading";
 }
-
-enum ChargeCarPageEnum { CONNECTING, CHOOSE_TIME, CHARGING, WAIT_PLUGING}

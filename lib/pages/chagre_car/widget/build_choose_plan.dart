@@ -3,7 +3,6 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:v2/pages/chagre_car/charge_car_controller.dart';
 import 'package:v2/pages/customs/button.dart';
-import 'package:v2/utils/const.dart';
 
 import '../../../model/payment_model.dart';
 import '../../../model/response_base.dart';

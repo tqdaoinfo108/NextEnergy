@@ -4,11 +4,11 @@ import 'package:get/get.dart';
 import 'package:v2/pages/chagre_car/widget/build_choose_plan.dart';
 import 'package:v2/pages/customs/appbar.dart';
 import 'package:v2/services/localization_service.dart';
-import 'package:v2/utils/const.dart';
 import '../customs/page_life_cycle.dart';
 import 'charge_car_controller.dart';
 import 'widget/buid_charging.dart';
 import 'widget/build_wait_pluging.dart';
+import 'widget/ble_debug_overlay.dart';
 
 class ChargeCarPage extends GetView<ChargeCarController> {
   const ChargeCarPage({Key? key}) : super(key: key);
@@ -52,7 +52,18 @@ class ChargeCarPage extends GetView<ChargeCarController> {
             controller.pageEnum.value == ChargeCarPageEnum.CHARGING;
         return shouldHideLeading ? const SizedBox.shrink() : const BackButton();
       }),
-      actions: [_buildBluetoothStatus(theme)],
+      actions: [
+        // Debug toggle button
+        IconButton(
+          icon: Obx(() => Icon(
+            controller.isDebugMode.value ? Icons.bug_report : Icons.bug_report_outlined,
+            color: controller.isDebugMode.value ? Colors.green : Colors.grey,
+          )),
+          onPressed: () => controller.toggleDebugMode(),
+          tooltip: 'Toggle Debug Mode',
+        ),
+        _buildBluetoothStatus(theme),
+      ],
     );
   }
 
@@ -176,6 +187,19 @@ class ChargeCarPage extends GetView<ChargeCarController> {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: _buildMainContent(theme),
+        ),
+        
+        // Debug overlay
+        BleDebugOverlay(
+          isDebugMode: controller.isDebugMode,
+          bleStatus: controller.bleStatus,
+          connectionState: controller.connectionState,
+          nearbyDevices: controller.nearbyDevices,
+          targetDeviceName: controller.nameDevice,
+          connectedDeviceId: controller.deviceId,
+          isAuthorized: controller.isAuthorized,
+          lastAction: controller.lastDebugAction,
+          bleOperationLogs: controller.bleOperationLogs,
         ),
         
         // Bluetooth grant overlay
@@ -770,4 +794,5 @@ class ChargeCarPage extends GetView<ChargeCarController> {
       EasyLoading.dismiss();
     }
   }
+
 }
