@@ -65,7 +65,9 @@ class ChargeCarController extends GetxControllerCustom
   bool _shouldMaintainConnection = false;
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
-  static const int _maxReconnectAttempts = 3;
+  static const int _maxReconnectAttempts = 5;
+  BluetoothDevice? _currentDevice;
+  StreamSubscription<BluetoothConnectionState>? _connectionStateSubscription;
 
   // Thiết bị phần cứng
   Rx<ChargeCarPageEnum> pageEnum = Rx(ChargeCarPageEnum.CONNECTING);
@@ -171,6 +173,8 @@ class ChargeCarController extends GetxControllerCustom
 
   back() async {
     try {
+      print("🔙 Starting cleanup before going back");
+      
       // Dừng smart reconnect khi thoát
       _shouldMaintainConnection = false;
       _stopReconnectTimer();
@@ -178,40 +182,36 @@ class ChargeCarController extends GetxControllerCustom
       bookingData = null;
       isauthorizeDevice = false;
       await FlutterBluePlus.stopScan();
+      
+      // Disconnect và clear GATT cache cho tất cả devices
       var listDevice = FlutterBluePlus.connectedDevices;
       for (var device in listDevice) {
-        await device.disconnect();
+        print("🔙 Disconnecting device: ${device.platformName}");
+        
+        try {
+          // Clear GATT cache trước khi disconnect (Android only)
+          if (Platform.isAndroid) {
+            await device.clearGattCache();
+            print("🧹 GATT cache cleared for ${device.platformName}");
+          }
+          
+          await device.disconnect();
+          print("✅ Device disconnected: ${device.platformName}");
+        } catch (e) {
+          print("❌ Error disconnecting device: $e");
+        }
       }
+      
+      // Cancel subscriptions
       stateBluetoothSubscription.cancel();
       stateConnectedSubscription?.cancel();
+      _connectionStateSubscription?.cancel();
+      
+      print("✅ Cleanup completed");
     } finally {
       pageEnum.value = ChargeCarPageEnum.CONNECTING;
       Get.back();
     }
-  }
-
-  // Smart reconnect logic
-  void _handleSmartReconnect() {
-    if (_reconnectAttempts >= _maxReconnectAttempts) {
-      print("🔄 Max reconnect attempts reached, stopping...");
-      _shouldMaintainConnection = false;
-      return;
-    }
-
-    _reconnectAttempts++;
-    print("🔄 Smart reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts");
-
-    _reconnectTimer = Timer(Duration(seconds: 2 + _reconnectAttempts), () async {
-      if (_shouldMaintainConnection && !isConnectedDevice) {
-        print("🔄 Attempting smart reconnect...");
-        try {
-          await connectDevice(timeoutSecond: 5);
-        } catch (e) {
-          print("❌ Smart reconnect failed: $e");
-          _handleSmartReconnect(); // Retry
-        }
-      }
-    });
   }
 
   void _stopReconnectTimer() {
@@ -233,6 +233,64 @@ class ChargeCarController extends GetxControllerCustom
     _stopReconnectTimer();
     print("🔗 Connection maintenance disabled");
   }
+  
+  // Attempt to reconnect to device
+  void _attemptReconnect() async {
+    if (!_shouldMaintainConnection) {
+      print("⏭️ Reconnect skipped - maintenance disabled");
+      return;
+    }
+    
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      print("⚠️ Max reconnect attempts reached ($_maxReconnectAttempts)");
+      EasyLoading.showError(
+        TKeys.fail_again2.translate(),
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    
+    _reconnectAttempts++;
+    print("🔄 Reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts");
+    
+    // Đợi một chút trước khi thử reconnect
+    await Future.delayed(Duration(seconds: 2 * _reconnectAttempts));
+    
+    if (!_shouldMaintainConnection) return;
+    
+    try {
+      // Nếu có current device, thử connect trực tiếp
+      if (_currentDevice != null) {
+        print("📱 Attempting direct connect to saved device");
+        await _currentDevice!.connect(
+          autoConnect: true,
+          timeout: const Duration(seconds: 10),
+          mtu:  null
+        );
+        print("✅ Reconnected successfully");
+        _reconnectAttempts = 0;
+        
+        // Re-authorize sau khi reconnect
+        if (!isAuthorize.value) {
+          await authorizeDevice(_currentDevice!);
+        }
+      } else {
+        // Fallback: scan lại device
+        print("🔍 Scanning for device: $nameDevice");
+        await connectDevice(timeoutSecond: 15, isBackWhenDontConnect: false);
+      }
+    } catch (e) {
+      print("❌ Reconnect attempt failed: $e");
+      
+      // Thử lại sau một khoảng thời gian
+      if (_reconnectAttempts < _maxReconnectAttempts) {
+        _reconnectTimer = Timer(
+          Duration(seconds: 3 * _reconnectAttempts),
+          () => _attemptReconnect(),
+        );
+      }
+    }
+  }
 
   // kết nối device
   Future<void> connectDevice(
@@ -252,25 +310,60 @@ class ChargeCarController extends GetxControllerCustom
 
         ScanResult result = results.last;
         if (result.device.platformName == nameDevice) {
-          // Sử dụng autoConnect = false để tránh reconnect liên tục
-          await result.device.connect(autoConnect: false, mtu: null);
+          print("📱 Found device: $nameDevice, RSSI: ${result.rssi}");
+          
+          // Lưu device để có thể reconnect sau này
+          _currentDevice = result.device;
+          
+          // Sử dụng autoConnect = true để tự động reconnect khi trong phạm vi
+          // Note: mtu và autoConnect không thể dùng cùng lúc
+          await result.device.connect(
+            autoConnect: true,  // Enable auto-reconnect
+            timeout: const Duration(seconds: 15),
+            mtu: null
+          );
+          
+          print("✅ Connected to device: $nameDevice");
+          
+          // Request MTU sau khi connect (Android only)
           if (Platform.isAndroid) {
-            result.device.requestMtu(512);
+            try {
+              await result.device.requestMtu(512);
+              print("📶 MTU size updated to 512");
+            } catch (e) {
+              print("⚠️ MTU request failed: $e");
+            }
           }
+
           authorizeDevice(result.device);
           _stateConnectedDevice.value = BluetoothConnectionState.connected;
 
-          stateConnectedSubscription = result.device.connectionState
+          // Setup connection state monitoring với reconnect logic
+          _connectionStateSubscription?.cancel();
+          _connectionStateSubscription = result.device.connectionState
               .listen((BluetoothConnectionState state) async {
+            print("📡 Connection state changed: $state");
             _stateConnectedDevice.value = state;
 
             if (state == BluetoothConnectionState.disconnected) {
+              print("❌ Device disconnected");
               isAuthorize.value = false;
               isauthorizeDevice = false;
               
-              // Smart reconnect logic - chỉ reconnect khi đang sạc
+              // Clear GATT cache khi disconnect (Android only)
+              if (Platform.isAndroid) {
+                try {
+                  await result.device.clearGattCache();
+                  print("🧹 GATT cache cleared after disconnect");
+                } catch (e) {
+                  print("⚠️ Failed to clear GATT cache: $e");
+                }
+              }
+              
+              // Tự động reconnect nếu đang trong charging session
               if (_shouldMaintainConnection && pageEnum.value == ChargeCarPageEnum.CHARGING) {
-                _handleSmartReconnect();
+                print("🔄 Attempting auto-reconnect...");
+                _attemptReconnect();
               }
               return;
             }
@@ -595,6 +688,8 @@ class ChargeCarController extends GetxControllerCustom
   // sạc hoàn thành
   Future<void> onBookingComplete() async {
     try {
+      print("🏁 Starting booking completion process");
+      
       // Tắt smart reconnect vì booking đã complete
       _disableConnectionMaintenance();
       
@@ -603,15 +698,30 @@ class ChargeCarController extends GetxControllerCustom
         EasyLoading.showInfo(TKeys.fail_again2.translate());
         return;
       }
+      
       var characteristic = (await findBluetoothCharacteristic())!;
       var bytes2 = utf8.encode("OFF");
 
       await characteristic.write(bytes2);
+      print("📤 Sent OFF command to device");
 
       await Future.delayed(const Duration(milliseconds: 500));
+      
       var onCompleteBooking =
           await HttpHelper.updateBookingComplete(bookingData?.bookID ?? 0);
       if (onCompleteBooking != null && onCompleteBooking.data != null) {
+        print("✅ Booking completed successfully");
+        
+        // Clear GATT cache trước khi disconnect (Android only)
+        if (Platform.isAndroid && _currentDevice != null) {
+          try {
+            await _currentDevice!.clearGattCache();
+            print("🧹 GATT cache cleared after completion");
+          } catch (e) {
+            print("⚠️ Failed to clear GATT cache: $e");
+          }
+        }
+        
         EasyLoading.showSuccess(
             TKeys.complete_charging_end_processing.translate(),
             duration: const Duration(seconds: 5));
@@ -928,9 +1038,30 @@ class ChargeCarController extends GetxControllerCustom
   }
 
   @override
-  void onClose() {
+  void onClose() async {
+    print("🔚 Controller closing - performing cleanup");
+    
     // Tắt smart reconnect khi controller bị dispose
     _disableConnectionMaintenance();
+    
+    // Cancel all subscriptions
+    _connectionStateSubscription?.cancel();
+    stateConnectedSubscription?.cancel();
+    
+    // Clear GATT cache và disconnect nếu còn connected
+    if (_currentDevice != null) {
+      try {
+        if (Platform.isAndroid) {
+          await _currentDevice!.clearGattCache();
+          print("🧹 GATT cache cleared in onClose");
+        }
+        await _currentDevice!.disconnect();
+        print("✅ Device disconnected in onClose");
+      } catch (e) {
+        print("⚠️ Error during cleanup in onClose: $e");
+      }
+    }
+    
     super.onClose();
   }
 }
