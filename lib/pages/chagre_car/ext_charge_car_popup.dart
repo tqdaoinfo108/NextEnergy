@@ -218,7 +218,7 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                 if (result.reqRedirectionUri != null &&
                     result.reqRedirectionUri!.isNotEmpty) {
                   final paymentResult = await showPaymentBottomSheet(
-                    context: context,
+                    context: Get.context ?? cxt,
                     url: result.reqRedirectionUri!,
                     onPaymentComplete: () {
                       debugPrint('Payment completed successfully');
