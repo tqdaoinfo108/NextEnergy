@@ -19,7 +19,7 @@ class DioRequest {
     var userID = HiveHelper.get(Constants.USER_ID, defaultvalue: 0);
     if (userID != 0) {
       // ignore: prefer_interpolation_to_compose_strings
-      return 'Basic ' + 
+      return 'Basic ' +
           base64.encode(utf8.encode(
               '${userID.toString()}:${HiveHelper.get(Constants.LAST_LOGIN)}'));
     }
@@ -36,6 +36,7 @@ class DioRequest {
     try {
       Response result = await Dio()
           .get(baseURL + path, options: getOption, queryParameters: query);
+
       return result;
     } on DioError catch (e) {
       print(e.response);

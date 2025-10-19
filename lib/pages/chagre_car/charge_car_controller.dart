@@ -61,6 +61,14 @@ class ChargeCarController extends GetxControllerCustom
   bool get isAvailable =>
       isOnBluetooth && isConnectedDevice && isAuthorize.value;
 
+  // Retry connection status
+  RxInt currentRetryAttempt = RxInt(0);
+  RxInt maxRetryAttempts = RxInt(3);
+  RxString retryStatus = RxString(''); // "Đang kết nối... (Lần 2/3)"
+
+  // Authorization state
+  bool _isAuthorizingInProgress = false; // Prevent concurrent authorization
+
   // Smart connection management
   bool _shouldMaintainConnection = false;
   Timer? _reconnectTimer;
@@ -72,10 +80,19 @@ class ChargeCarController extends GetxControllerCustom
   // Thiết bị phần cứng
   Rx<ChargeCarPageEnum> pageEnum = Rx(ChargeCarPageEnum.CONNECTING);
 
-  bool get canPop => [
-        ChargeCarPageEnum.CHOOSE_TIME,
-        ChargeCarPageEnum.CONNECTING,
-      ].contains(pageEnum.value);
+  bool get canPop {
+    // ❌ Không cho back khi đang authorize hoặc đang charging
+    if (_isAuthorizingInProgress) {
+      print("⚠️ Cannot go back - authorization in progress");
+      return false;
+    }
+
+    return [
+      ChargeCarPageEnum.CHOOSE_TIME,
+      ChargeCarPageEnum.CONNECTING,
+    ].contains(pageEnum.value);
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -97,13 +114,38 @@ class ChargeCarController extends GetxControllerCustom
 
     if (Get.arguments is String) {
       originalQRCode = Get.arguments; // Lưu mã QR gốc
-      nameDevice = originalQRCode.replaceAll('_1', '').replaceAll('_2', ''); // Remove suffix cho Bluetooth scan
+      nameDevice = originalQRCode
+          .replaceAll('_1', '')
+          .replaceAll('_2', ''); // Remove suffix cho Bluetooth scan
       // chờ bật bluetooth rồi connect
 
       connectDevice().then((value) async {
+        // ⏳ Đợi thêm thời gian cho authorization hoàn thành (retry có thể mất ~19s)
+        await Future.delayed(const Duration(seconds: 20));
+
+        // ✅ Kiểm tra kỹ hơn - chỉ back nếu thực sự thất bại
+        // Nếu đã chuyển sang CHOOSE_TIME page thì authorization đã thành công
+        if (isClosed) {
+          print("⚠️ Controller already disposed, skipping auto-back check");
+          return;
+        }
+
+        if (pageEnum.value == ChargeCarPageEnum.CHOOSE_TIME) {
+          print("✅ Already on CHOOSE_TIME page - authorization successful");
+          return;
+        }
+
         if (!isAvailable && Get.currentRoute == "/charge_car") {
+          print(
+              "⚠️ Auto-back triggered: Connection/Authorization failed after extended timeout");
+          print("   - isOnBluetooth: $isOnBluetooth");
+          print("   - isConnectedDevice: $isConnectedDevice");
+          print("   - isAuthorize: ${isAuthorize.value}");
+          print("   - pageEnum: ${pageEnum.value}");
           EasyLoading.showError(TKeys.fail_again2.translate());
           back();
+        } else if (isAvailable) {
+          print("✅ Connection and authorization successful");
         }
       });
     } else {
@@ -151,10 +193,10 @@ class ChargeCarController extends GetxControllerCustom
             pageEnum.value == ChargeCarPageEnum.CHARGING &&
             isContinueCompleteBooking) {
           isContinueCompleteBooking = false;
-          
+
           // Tắt smart reconnect vì charging đã hoàn thành
           _disableConnectionMaintenance();
-          
+
           EasyLoading.showSuccess(
               TKeys.complete_charging_end_processing_auto.translate(),
               duration: const Duration(seconds: 5));
@@ -174,39 +216,39 @@ class ChargeCarController extends GetxControllerCustom
   back() async {
     try {
       print("🔙 Starting cleanup before going back");
-      
+
       // Dừng smart reconnect khi thoát
       _shouldMaintainConnection = false;
       _stopReconnectTimer();
-      
+
       bookingData = null;
       isauthorizeDevice = false;
       await FlutterBluePlus.stopScan();
-      
+
       // Disconnect và clear GATT cache cho tất cả devices
       var listDevice = FlutterBluePlus.connectedDevices;
       for (var device in listDevice) {
         print("🔙 Disconnecting device: ${device.platformName}");
-        
+
         try {
           // Clear GATT cache trước khi disconnect (Android only)
           if (Platform.isAndroid) {
             await device.clearGattCache();
             print("🧹 GATT cache cleared for ${device.platformName}");
           }
-          
+
           await device.disconnect();
           print("✅ Device disconnected: ${device.platformName}");
         } catch (e) {
           print("❌ Error disconnecting device: $e");
         }
       }
-      
+
       // Cancel subscriptions
       stateBluetoothSubscription.cancel();
       stateConnectedSubscription?.cancel();
       _connectionStateSubscription?.cancel();
-      
+
       print("✅ Cleanup completed");
     } finally {
       pageEnum.value = ChargeCarPageEnum.CONNECTING;
@@ -233,14 +275,90 @@ class ChargeCarController extends GetxControllerCustom
     _stopReconnectTimer();
     print("🔗 Connection maintenance disabled");
   }
-  
-  // Attempt to reconnect to device
+
+  // Continuous reconnect for CHARGING session - NO GIVE UP
+  void _startContinuousReconnect() async {
+    if (!_shouldMaintainConnection) {
+      print("⏭️ Continuous reconnect stopped - maintenance disabled");
+      return;
+    }
+
+    if (pageEnum.value != ChargeCarPageEnum.CHARGING) {
+      print("⏭️ Not in CHARGING state anymore, stopping continuous reconnect");
+      return;
+    }
+
+    _reconnectAttempts++;
+    print(
+        "🔄 Continuous reconnect attempt #$_reconnectAttempts (UNLIMITED during charging)");
+
+    // Progressive delay: 2s, 4s, 6s, max 10s
+    int delaySeconds = (_reconnectAttempts * 2).clamp(2, 10);
+    await Future.delayed(Duration(seconds: delaySeconds));
+
+    // Check again after delay
+    if (!_shouldMaintainConnection ||
+        pageEnum.value != ChargeCarPageEnum.CHARGING) {
+      print("⏭️ Reconnect cancelled after delay");
+      return;
+    }
+
+    try {
+      if (_currentDevice != null) {
+        print(
+            "📱 Attempting direct connect to saved device (charging session)");
+
+        // Try to connect
+        await _currentDevice!.connect(
+            autoConnect: false, // Use false for more reliable reconnect
+            timeout: const Duration(seconds: 8),
+            mtu: null);
+
+        print("✅ Reconnected successfully!");
+
+        // Wait a bit for connection to stabilize
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Verify connection
+        var connectionState = await _currentDevice!.connectionState.first;
+        if (connectionState == BluetoothConnectionState.connected) {
+          print("✅ Connection verified, resetting reconnect counter");
+          _reconnectAttempts = 0;
+
+          // ✅ Re-authorize after successful reconnect
+          if (!isAuthorize.value && !isClosed) {
+            print("🔐 Re-authorizing device after reconnect...");
+            isauthorizeDevice = false; // Reset flag to allow re-auth
+            await authorizeDevice(_currentDevice!);
+          }
+        } else {
+          throw Exception("Connection not stable");
+        }
+      } else {
+        print("❌ No saved device, cannot reconnect");
+      }
+    } catch (e) {
+      print("❌ Reconnect attempt #$_reconnectAttempts failed: $e");
+
+      // ✅ ALWAYS retry if still charging - NO GIVE UP
+      if (_shouldMaintainConnection &&
+          pageEnum.value == ChargeCarPageEnum.CHARGING) {
+        print("♻️ Will retry reconnect continuously...");
+        _reconnectTimer = Timer(
+          Duration(seconds: delaySeconds),
+          () => _startContinuousReconnect(),
+        );
+      }
+    }
+  }
+
+  // Attempt to reconnect to device (with max attempts limit)
   void _attemptReconnect() async {
     if (!_shouldMaintainConnection) {
       print("⏭️ Reconnect skipped - maintenance disabled");
       return;
     }
-    
+
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       print("⚠️ Max reconnect attempts reached ($_maxReconnectAttempts)");
       EasyLoading.showError(
@@ -249,27 +367,24 @@ class ChargeCarController extends GetxControllerCustom
       );
       return;
     }
-    
+
     _reconnectAttempts++;
     print("🔄 Reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts");
-    
+
     // Đợi một chút trước khi thử reconnect
     await Future.delayed(Duration(seconds: 2 * _reconnectAttempts));
-    
+
     if (!_shouldMaintainConnection) return;
-    
+
     try {
       // Nếu có current device, thử connect trực tiếp
       if (_currentDevice != null) {
         print("📱 Attempting direct connect to saved device");
         await _currentDevice!.connect(
-          autoConnect: true,
-          timeout: const Duration(seconds: 10),
-          mtu:  null
-        );
+            autoConnect: true, timeout: const Duration(seconds: 10), mtu: null);
         print("✅ Reconnected successfully");
         _reconnectAttempts = 0;
-        
+
         // Re-authorize sau khi reconnect
         if (!isAuthorize.value) {
           await authorizeDevice(_currentDevice!);
@@ -281,7 +396,7 @@ class ChargeCarController extends GetxControllerCustom
       }
     } catch (e) {
       print("❌ Reconnect attempt failed: $e");
-      
+
       // Thử lại sau một khoảng thời gian
       if (_reconnectAttempts < _maxReconnectAttempts) {
         _reconnectTimer = Timer(
@@ -290,6 +405,89 @@ class ChargeCarController extends GetxControllerCustom
         );
       }
     }
+  }
+
+  // Helper method: Connect to device with retry mechanism
+  Future<bool> _connectToDeviceWithRetry(BluetoothDevice device,
+      {int maxRetries = 3}) async {
+    maxRetryAttempts.value = maxRetries;
+
+    for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
+      // ✅ Check if controller still exists (user hasn't navigated away)
+      if (isClosed) {
+        print("❌ Controller disposed, stopping retry");
+        retryStatus.value = '';
+        currentRetryAttempt.value = 0;
+        return false;
+      }
+
+      try {
+        // Update UI status
+        currentRetryAttempt.value = retryCount + 1;
+        if (retryCount > 0) {
+          retryStatus.value =
+              '${TKeys.connecting.translate()} (Lần ${retryCount + 1}/$maxRetries)';
+          print("🔄 Connection retry attempt ${retryCount + 1}/$maxRetries");
+          await Future.delayed(
+              Duration(seconds: 1 * retryCount)); // Giảm delay: 1s, 2s
+        } else {
+          retryStatus.value = TKeys.connecting.translate();
+          print("🔌 Attempting to connect...");
+        }
+
+        // ⚡ Giảm timeout từ 10s xuống 5s để nhanh hơn
+        await device.connect(
+            autoConnect: true,
+            timeout: const Duration(seconds: 5), // 10s → 5s
+            mtu: null);
+
+        print(
+            "✅ Connected to device: ${device.platformName} (attempt ${retryCount + 1})");
+
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        var connectionState = await device.connectionState.first;
+        if (connectionState != BluetoothConnectionState.connected) {
+          print("❌ Device not in connected state after connect");
+          throw Exception("Device not in connected state");
+        }
+
+        if (Platform.isAndroid) {
+          try {
+            await device.requestMtu(512);
+            print("📶 MTU size updated to 512");
+            await Future.delayed(const Duration(milliseconds: 200));
+          } catch (e) {
+            print("⚠️ MTU request failed: $e");
+          }
+        }
+
+        // Clear retry status on success
+        retryStatus.value = '';
+        currentRetryAttempt.value = 0;
+        return true; // Success
+      } catch (e) {
+        print("❌ Connection attempt ${retryCount + 1} failed: $e");
+
+        if (retryCount == maxRetries - 1) {
+          print("❌ All connection attempts failed");
+          retryStatus.value = TKeys.unable_to_connect.translate();
+          currentRetryAttempt.value = 0;
+          return false; // All retries failed
+        } else {
+          try {
+            await device.disconnect();
+            await Future.delayed(const Duration(milliseconds: 500));
+          } catch (disconnectError) {
+            print("⚠️ Error disconnecting before retry: $disconnectError");
+          }
+        }
+      }
+    }
+
+    retryStatus.value = '';
+    currentRetryAttempt.value = 0;
+    return false;
   }
 
   // kết nối device
@@ -311,76 +509,119 @@ class ChargeCarController extends GetxControllerCustom
         ScanResult result = results.last;
         if (result.device.platformName == nameDevice) {
           print("📱 Found device: $nameDevice, RSSI: ${result.rssi}");
-          
+
+          // ✅ Stop scan immediately to prevent duplicate connections
+          await FlutterBluePlus.stopScan();
+          print("🛑 Scan stopped after finding device");
+
           // Lưu device để có thể reconnect sau này
           _currentDevice = result.device;
-          
-          // Sử dụng autoConnect = true để tự động reconnect khi trong phạm vi
-          // Note: mtu và autoConnect không thể dùng cùng lúc
-          await result.device.connect(
-            autoConnect: true,  // Enable auto-reconnect
-            timeout: const Duration(seconds: 15),
-            mtu: null
-          );
-          
-          print("✅ Connected to device: $nameDevice");
-          
-          // Request MTU sau khi connect (Android only)
-          if (Platform.isAndroid) {
-            try {
-              await result.device.requestMtu(512);
-              print("📶 MTU size updated to 512");
-            } catch (e) {
-              print("⚠️ MTU request failed: $e");
-            }
+
+          // Thử connect với retry mechanism (tối đa 3 lần)
+          bool connectionSuccess =
+              await _connectToDeviceWithRetry(result.device, maxRetries: 3);
+
+          if (!connectionSuccess) {
+            print("❌ Failed to connect after all retries");
+            return;
           }
 
-          authorizeDevice(result.device);
+          print("✅ Connection established successfully");
+
+          // ❌ REMOVED: Không gọi authorizeDevice ở đây để tránh duplicate
+          // authorizeDevice sẽ được gọi trong connection state listener
           _stateConnectedDevice.value = BluetoothConnectionState.connected;
 
           // Setup connection state monitoring với reconnect logic
           _connectionStateSubscription?.cancel();
           _connectionStateSubscription = result.device.connectionState
               .listen((BluetoothConnectionState state) async {
-            print("📡 Connection state changed: $state");
             _stateConnectedDevice.value = state;
 
             if (state == BluetoothConnectionState.disconnected) {
-              print("❌ Device disconnected");
               isAuthorize.value = false;
               isauthorizeDevice = false;
-              
+
               // Clear GATT cache khi disconnect (Android only)
-              if (Platform.isAndroid) {
+              if (Platform.isAndroid && Get.currentRoute != "/charge_car")   {
                 try {
                   await result.device.clearGattCache();
-                  print("🧹 GATT cache cleared after disconnect");
-                } catch (e) {
-                  print("⚠️ Failed to clear GATT cache: $e");
-                }
+                } catch (e) {}
               }
-              
-              // Tự động reconnect nếu đang trong charging session
-              if (_shouldMaintainConnection && pageEnum.value == ChargeCarPageEnum.CHARGING) {
-                print("🔄 Attempting auto-reconnect...");
+
+              // ✅ Tự động reconnect LIÊN TỤC nếu đang charging
+              if (_shouldMaintainConnection &&
+                  pageEnum.value == ChargeCarPageEnum.CHARGING) {
+                _startContinuousReconnect();
+              } else if (_shouldMaintainConnection) {
                 _attemptReconnect();
               }
               return;
             }
 
+            // ✅ Authorize when connected (includes reconnect scenarios)
             if (!isAuthorize.value && !isauthorizeDevice) {
               isauthorizeDevice = true;
+
+              // ✅ Verify device still connected before operations
+              var currentConnectionState =
+                  await result.device.connectionState.first;
+              if (currentConnectionState !=
+                  BluetoothConnectionState.connected) {
+                isauthorizeDevice = false; // Reset flag
+                return;
+              }
+
+              // ✅ Check controller not disposed
+              if (isClosed) {
+                return;
+              }
+
               findBluetoothCharacteristic();
               var listDevice = FlutterBluePlus.connectedDevices;
-              if (listDevice.isEmpty) return;
-              var device = FlutterBluePlus.connectedDevices.first;
-              if (Platform.isAndroid) {
-                device.requestMtu(512);
+              if (listDevice.isEmpty) {
+                isauthorizeDevice = false; // Reset flag
+                return;
               }
-              authorizeDevice(device);
-            }
+              var device = FlutterBluePlus.connectedDevices.first;
+
+              // ✅ Request MTU with connection check
+              if (Platform.isAndroid && !isClosed) {
+                try {
+                  await device.requestMtu(512);
+                } catch (e) {
+                  // Continue with authorization even if MTU fails
+                }
+              }
+
+              await authorizeDevice(device);
+            } else if (isAuthorize.value) {
+            } else {}
           });
-          if (Platform.isAndroid) result.device.requestMtu(512);
+
+          // ✅ Check current connection state để trigger authorize nếu đã connected
+          var currentState = await result.device.connectionState.first;
+          if (currentState == BluetoothConnectionState.connected &&
+              !isAuthorize.value &&
+              !isauthorizeDevice) {
+            // ✅ Check controller not disposed
+            if (isClosed) {
+              return;
+            }
+
+            isauthorizeDevice = true;
+
+            // ✅ Request MTU with error handling
+            if (Platform.isAndroid && !isClosed) {
+              try {
+                await result.device.requestMtu(512);
+              } catch (e) {
+                // Continue with authorization
+              }
+            }
+
+            authorizeDevice(result.device);
+          }
         }
       },
     );
@@ -416,24 +657,59 @@ class ChargeCarController extends GetxControllerCustom
   }
 
   bool isFindBluetoothCharacteristic = true;
-  
+
   // Định nghĩa UUID cho các cổng khác nhau
-  static const String CHARACTERISTIC_1_UUID = "e6eae575-4d89-4750-bf3e-c82d6a1cd299";
-  static const String CHARACTERISTIC_2_UUID = "f6eae575-4d89-4750-bf3e-c82d6a1cd29a";
-  
+  static const String CHARACTERISTIC_1_UUID =
+      "e6eae575-4d89-4750-bf3e-c82d6a1cd299";
+  static const String CHARACTERISTIC_2_UUID =
+      "f6eae575-4d89-4750-bf3e-c82d6a1cd29a";
+
   Future<BluetoothCharacteristic?> findBluetoothCharacteristic(
       {BluetoothDevice? device}) async {
+    // ✅ Check controller state first
+    if (isClosed) {
+      print("❌ Controller disposed, cannot find characteristic");
+      return null;
+    }
+
     if (device == null) {
       var listDevice = FlutterBluePlus.connectedDevices;
       if (listDevice.isEmpty) return null;
 
       device = FlutterBluePlus.connectedDevices.first;
-      if (Platform.isAndroid) {
-        await device.requestMtu(512);
-      }
     }
+
     if (!isFindBluetoothCharacteristic) return null;
-    
+
+    // ✅ Verify device is still connected before MTU request
+    try {
+      var connectionState = await device.connectionState.first;
+      if (connectionState != BluetoothConnectionState.connected) {
+        print("❌ Device not connected, cannot find characteristic");
+        return null;
+      }
+
+      // Request MTU only if device is connected and controller exists
+      if (Platform.isAndroid && !isClosed) {
+        try {
+          await device.requestMtu(512);
+          print("📶 MTU requested in findBluetoothCharacteristic");
+        } catch (e) {
+          print("⚠️ MTU request failed in findBluetoothCharacteristic: $e");
+          // Continue even if MTU fails
+        }
+      }
+    } catch (e) {
+      print("❌ Error checking connection state: $e");
+      return null;
+    }
+
+    // ✅ Check again before discovering services
+    if (isClosed) {
+      print("❌ Controller disposed before discovering services");
+      return null;
+    }
+
     try {
       var discoverServices = await device.discoverServices();
       print("🔍 Found ${discoverServices.length} services");
@@ -444,35 +720,49 @@ class ChargeCarController extends GetxControllerCustom
       String? targetCharacteristicUuid;
       if (originalQRCode.endsWith('_2')) {
         targetCharacteristicUuid = CHARACTERISTIC_2_UUID;
-        
+
         // Chỉ tìm UUID_2, không fallback
         for (var service in discoverServices) {
           for (var characteristic in service.characteristics) {
-            if (characteristic.uuid.toString().toLowerCase() == targetCharacteristicUuid.toLowerCase()) {
-              if (characteristic.properties.read && characteristic.properties.write) {
+            if (characteristic.uuid.toString().toLowerCase() ==
+                targetCharacteristicUuid.toLowerCase()) {
+              if (characteristic.properties.read &&
+                  characteristic.properties.write) {
+                print("✅ Found characteristic: ${characteristic.uuid}");
                 return characteristic;
               } else {
+                print(
+                    "⚠️ Characteristic found but missing read/write properties");
               }
             }
           }
         }
+        print("❌ Characteristic UUID_2 not found");
         return null;
-        
       } else {
         targetCharacteristicUuid = CHARACTERISTIC_1_UUID;
         // Chỉ tìm UUID_1, không fallback
         for (var service in discoverServices) {
           for (var characteristic in service.characteristics) {
-            if (characteristic.uuid.toString().toLowerCase() == targetCharacteristicUuid.toLowerCase()) {
-              if (characteristic.properties.read && characteristic.properties.write) {
+            if (characteristic.uuid.toString().toLowerCase() ==
+                targetCharacteristicUuid.toLowerCase()) {
+              if (characteristic.properties.read &&
+                  characteristic.properties.write) {
+                print("✅ Found characteristic: ${characteristic.uuid}");
                 return characteristic;
               } else {
+                print(
+                    "⚠️ Characteristic found but missing read/write properties");
               }
             }
           }
         }
+        print("❌ Characteristic UUID_1 not found");
         return null;
       }
+    } catch (e) {
+      print("❌ Error discovering services: $e");
+      return null;
     } finally {
       isFindBluetoothCharacteristic = true;
     }
@@ -480,10 +770,36 @@ class ChargeCarController extends GetxControllerCustom
 
   // xác thực device
   bool isauthorizeDevice = false;
+
   authorizeDevice(BluetoothDevice device) async {
+    // ✅ Prevent duplicate authorization calls
+    if (_isAuthorizingInProgress) {
+      print("⚠️ Authorization already in progress, skipping duplicate call");
+      return;
+    }
+
+    _isAuthorizingInProgress = true;
+
     try {
+      // ✅ Check if controller still exists
+      if (isClosed) {
+        print("❌ Controller disposed, skipping authorization");
+        return;
+      }
+
+      // ✅ Check if device is still connected
+      var connectionState = await device.connectionState.first;
+      if (connectionState != BluetoothConnectionState.connected) {
+        print("❌ Device not connected, skipping authorization");
+        return;
+      }
+
       var cx = await findBluetoothCharacteristic(device: device);
-      BluetoothCharacteristic c = cx!;
+      if (cx == null || isClosed) {
+        print("❌ Characteristic not found or controller disposed");
+        return;
+      }
+      BluetoothCharacteristic c = cx;
 
       var authenValue = md5
           .convert(utf8.encode(nameDevice.substring(5, 8)))
@@ -495,6 +811,9 @@ class ChargeCarController extends GetxControllerCustom
       print("🔐 Device name: $nameDevice");
       print("🔐 Device substring: ${nameDevice.substring(5, 8)}");
 
+      // ✅ Check before MTU request
+      if (isClosed) return;
+
       // Thử set MTU size
       try {
         await device.requestMtu(512);
@@ -503,46 +822,113 @@ class ChargeCarController extends GetxControllerCustom
         print("⚠️ MTU request failed: $e");
       }
 
-      await c.write(bytes);
+      // ✅ Check before write
+      if (isClosed) {
+        print("❌ Controller disposed before write");
+        return;
+      }
 
-      await Future.delayed(const Duration(seconds: 2)); // Tăng thời gian chờ
+      // ✅ Verify device still connected before write
+      connectionState = await device.connectionState.first;
+      if (connectionState != BluetoothConnectionState.connected) {
+        print("❌ Device disconnected before write");
+        return;
+      }
+
+      try {
+        await c.write(bytes);
+        print("✅ Auth value written successfully");
+      } catch (e) {
+        print("❌ Failed to write auth value: $e");
+        return;
+      }
+
+      // ⚡ Giảm delay từ 2s xuống 1s để user không phải đợi lâu
+      await Future.delayed(const Duration(seconds: 1));
+
+      // ✅ Check before read
+      if (isClosed) {
+        print("❌ Controller disposed before read");
+        return;
+      }
+
+      // ✅ Verify device still connected before read
+      connectionState = await device.connectionState.first;
+      if (connectionState != BluetoothConnectionState.connected) {
+        print("❌ Device disconnected before read");
+        return;
+      }
 
       String? rawValue = await readWithErrorHandling(c);
       if (rawValue == null) {
         print("❌ Failed to read response from ESP32");
-        EasyLoading.showError("Không thể đọc phản hồi từ thiết bị");
+        if (!isClosed) {
+          EasyLoading.showError("Không thể đọc phản hồi từ thiết bị");
+        }
         return;
       }
 
       print("📡 Received from ESP32: '$rawValue'");
       print("📡 Expected auth value: '$authenValue'");
 
+      // ✅ Check before processing response
+      if (isClosed) {
+        print("❌ Controller disposed before processing response");
+        return;
+      }
+
       if (rawValue.isNotEmpty) {
         // nếu gửi mã authen trùng nhận về > back
         if (rawValue.toLowerCase() == authenValue.toLowerCase() &&
             bookingData == null) {
-          EasyLoading.showInfo(TKeys.machine_in_use.translate(),
-              duration: const Duration(seconds: 5));
-          back();
+          if (!isClosed) {
+            EasyLoading.showInfo(TKeys.machine_in_use.translate(),
+                duration: const Duration(seconds: 5));
+            back();
+          }
           return;
         }
+
+        // ✅ Set authorize TRƯỚC để auto-back check không trigger
         isAuthorize.value = true;
+        print("✅ isAuthorize set to TRUE");
+
         if (rawValue.contains("{") && rawValue.contains("}")) {
           bleResponseModel = BleResponseModel.fromJson(jsonDecode(rawValue));
+          print(
+              "📦 Parsed BLE response model: bookingID=${bleResponseModel.bookingID}, myId=${bleResponseModel.myId}");
+
+          // ✅ Check if this is an old booking response
+          if (bleResponseModel.bookingID != null && bookingData == null) {
+            print(
+                "⚠️ ESP32 returned existing booking ID: ${bleResponseModel.bookingID}");
+            print("⚠️ This might be an old session. Checking with server...");
+          }
         } else {
           bleResponseModel = BleResponseModel();
+          print("📦 Created empty BLE response model");
         }
 
         if (bookingData != null && bleResponseModel.bookingID != null) {
+          print(
+              "🔄 Existing booking detected: ${bookingData?.bookID} vs ${bleResponseModel.bookingID}");
           if (bleResponseModel.bookingID == bookingData?.bookID) {
-            await onBookingComplete();
+            if (!isClosed) {
+              await onBookingComplete();
+            }
             return;
           }
         }
         // Chỉ chưa booking mới cần
-        if (bookingData == null) {
+        if (bookingData == null && !isClosed) {
+          print("🌐 Calling updateHardware API...");
           var checkQRCode =
               await HttpHelper.updateHardware(bleResponseModel.toJson());
+
+          print("🌐 updateHardware response: $checkQRCode");
+
+          if (isClosed) return;
+
           switch (checkQRCode) {
             case "DEACTIVE":
               EasyLoading.showInfo(
@@ -558,20 +944,45 @@ class ChargeCarController extends GetxControllerCustom
               return;
           }
         }
+
+        if (isClosed) return;
+
         await getListPrice();
+
+        if (isClosed) return;
+
         if (bookingData == null) {
+          print("🎯 Changing page to CHOOSE_TIME");
           pageEnum.value = ChargeCarPageEnum.CHOOSE_TIME;
+          print("✅ Page changed to: ${pageEnum.value}");
+        } else {
+          print("📋 Booking exists, not changing page");
         }
 
         // Gửi bookingID để xác nhận
-        if (bookingData?.bookID != null) {
+        if (bookingData?.bookID != null && !isClosed) {
+          // ✅ Verify device still connected
+          connectionState = await device.connectionState.first;
+          if (connectionState != BluetoothConnectionState.connected) {
+            print("❌ Device disconnected, cannot send bookingID");
+            return;
+          }
+
           bytes = utf8.encode("${bookingData!.bookID}");
-          await c.write(bytes);
-          await Future.delayed(const Duration(milliseconds: 500));
-          print("1 === Đã gửi bookingID ${bookingData?.bookID}");
+          try {
+            await c.write(bytes);
+            await Future.delayed(const Duration(milliseconds: 500));
+            print("1 === Đã gửi bookingID ${bookingData?.bookID}");
+          } catch (e) {
+            print("❌ Failed to write bookingID: $e");
+          }
         }
       }
-    } finally {}
+    } catch (e) {
+      print("❌ Authorization failed: $e");
+    } finally {
+      _isAuthorizingInProgress = false;
+    }
   }
 
   // lấy danh sách giá
@@ -617,44 +1028,25 @@ class ChargeCarController extends GetxControllerCustom
         }
 
         String? rawValue = await readWithErrorHandling(c, retryCount: 1);
-        print("🔥 BLE returned $rawValue");
         if (rawValue == null) {
-          print("❌ Failed to read response for iteration $i");
         } else {
-          print("📡 Reading response for iteration $i: '$rawValue'");
-
           if ("true" == rawValue.toLowerCase()) {
-            print(
-                "🔥 BLE returned 'true', attempting to update payment status...");
-            print(
-                "🔥 PaymentData check: ${paymentData != null ? 'EXISTS' : 'NULL'}");
-            print("🔥 PaymentID: ${paymentData?.paymentID}");
-
             var isUpdateComplete =
                 await onUpdateAffterHardware(1); // thành công
-
-            print(
-                "🔥 Update payment result: ${isUpdateComplete != null ? 'SUCCESS' : 'NULL'}");
-            print(
-                "🔥 Update payment data: ${isUpdateComplete?.data != null ? 'HAS_DATA' : 'NO_DATA'}");
 
             if (isUpdateComplete != null && isUpdateComplete.data != null) {
               List<int> bytesPAID = utf8.encode("PAID");
 
               await c.write(bytesPAID);
-              print("🔥 Written 'PAID' to BLE device");
-              
+
               // Enable smart reconnect cho charging session
               _enableConnectionMaintenance();
-              
+
               onInitWhenBookingExist();
               pageEnum.value = ChargeCarPageEnum.CHARGING;
-              print("🔥 Successfully changed pageEnum to CHARGING");
               isResult = true;
               break;
             } else {
-              print(
-                  "❌ Failed to update payment status - retrying in next iteration...");
               // Tiếp tục loop để thử lại, thay vì dừng ngay
               if (i >= 3) {
                 // Sau 3 lần thử, bỏ qua API và chuyển trực tiếp
@@ -689,16 +1081,16 @@ class ChargeCarController extends GetxControllerCustom
   Future<void> onBookingComplete() async {
     try {
       print("🏁 Starting booking completion process");
-      
+
       // Tắt smart reconnect vì booking đã complete
       _disableConnectionMaintenance();
-      
+
       // không có thiết bị kết nối
       if (!isAvailable) {
         EasyLoading.showInfo(TKeys.fail_again2.translate());
         return;
       }
-      
+
       var characteristic = (await findBluetoothCharacteristic())!;
       var bytes2 = utf8.encode("OFF");
 
@@ -706,12 +1098,12 @@ class ChargeCarController extends GetxControllerCustom
       print("📤 Sent OFF command to device");
 
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       var onCompleteBooking =
           await HttpHelper.updateBookingComplete(bookingData?.bookID ?? 0);
       if (onCompleteBooking != null && onCompleteBooking.data != null) {
         print("✅ Booking completed successfully");
-        
+
         // Clear GATT cache trước khi disconnect (Android only)
         if (Platform.isAndroid && _currentDevice != null) {
           try {
@@ -721,7 +1113,7 @@ class ChargeCarController extends GetxControllerCustom
             print("⚠️ Failed to clear GATT cache: $e");
           }
         }
-        
+
         EasyLoading.showSuccess(
             TKeys.complete_charging_end_processing.translate(),
             duration: const Duration(seconds: 5));
@@ -831,7 +1223,9 @@ class ChargeCarController extends GetxControllerCustom
 
   // Thời gian còn lại nhấn nút cancel
   String get getTimeStill {
-    if (bookingData == null || bookingData!.dateEnd == null || bookingData!.dateStart == null) return "--:--";
+    if (bookingData == null ||
+        bookingData!.dateEnd == null ||
+        bookingData!.dateStart == null) return "--:--";
     var time = (bookingData!.dateEnd! - bookingData!.dateStart!) -
         ((DateTime.now().millisecondsSinceEpoch ~/ 1000) -
             bookingData!.dateStart!);
@@ -1040,14 +1434,14 @@ class ChargeCarController extends GetxControllerCustom
   @override
   void onClose() async {
     print("🔚 Controller closing - performing cleanup");
-    
+
     // Tắt smart reconnect khi controller bị dispose
     _disableConnectionMaintenance();
-    
+
     // Cancel all subscriptions
     _connectionStateSubscription?.cancel();
     stateConnectedSubscription?.cancel();
-    
+
     // Clear GATT cache và disconnect nếu còn connected
     if (_currentDevice != null) {
       try {
@@ -1061,7 +1455,7 @@ class ChargeCarController extends GetxControllerCustom
         print("⚠️ Error during cleanup in onClose: $e");
       }
     }
-    
+
     super.onClose();
   }
 }

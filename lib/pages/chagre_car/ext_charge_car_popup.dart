@@ -25,130 +25,140 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() => Scaffold(
-      backgroundColor: const Color(0xFFF6FDF8), // App background color
-      body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          controller: scrollController,
-          children: [
-            // Header với gradient
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF059669), // Primary green
-                    const Color(0xFF10B981), // Secondary green
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF059669).withOpacity(0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
+          backgroundColor: const Color(0xFFF6FDF8), // App background color
+          body: SafeArea(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              controller: scrollController,
+              children: [
+                // Header với gradient
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF059669), // Primary green
+                        const Color(0xFF10B981), // Secondary green
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF059669).withOpacity(0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                child: Column(
-                  children: [
-                    // Header row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                    child: Column(
                       children: [
-                        // Back button
-                        IconButton(
-                          onPressed: () => Get.back(),
-                          icon: const Icon(
-                            Icons.arrow_back_ios,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        // Title
-                        Text(
-                          TKeys.choose_your_plant.translate(),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Account type indicator
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                controller.isVip ? Icons.star : Icons.person,
+                        // Header row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Back button
+                            IconButton(
+                              onPressed: () => Get.back(),
+                              icon: const Icon(
+                                Icons.arrow_back_ios,
                                 color: Colors.white,
-                                size: 16,
+                                size: 20,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                controller.isVip ? TKeys.premium_member.translate() : TKeys.account.translate(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                            ),
+                            // Title
+                            Text(
+                              TKeys.choose_your_plant.translate(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            // Account type indicator
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
                                 ),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    controller.isVip
+                                        ? Icons.star
+                                        : Icons.person,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    controller.isVip
+                                        ? TKeys.premium_member.translate()
+                                        : TKeys.account.translate(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Subtitle
-                  Text(
-                    TKeys.time_remaining.translate(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF222B45),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    TKeys.warning_auto_payment.translate(),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Subtitle
+                      Text(
+                        TKeys.time_remaining.translate(),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF222B45),
+                                ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        TKeys.warning_auto_payment.translate(),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF6B7280),
+                            ),
+                      ),
+                      const SizedBox(height: 24),
 
-                  // Price options
-                  ...controller.listPrice.map((item) => _buildPriceOption(item, context)),
-                ],
-              ),
+                      // Price options
+                      ...controller.listPrice
+                          .map((item) => _buildPriceOption(item, context)),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    ));
+          ),
+        ));
   }
 
   Widget _buildPriceOption(PriceModel item, BuildContext context) {
@@ -180,8 +190,8 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
 
             // kiểm tra có VIP không ?
             if (controller.isVip) {
-              var paymentKey = await controller
-                  .getPaymentKeyExtTimeBooking(item.priceID!);
+              var paymentKey =
+                  await controller.getPaymentKeyExtTimeBooking(item.priceID!);
               if (paymentKey != null) {
                 // Thanh toán vip member
                 await controller
@@ -192,8 +202,7 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                     var responseNewTime =
                         await controller.onUpdateAffterHardware(1,
                             isExtTime: true,
-                            paymentID:
-                                paymentKey.paymentID); // thành công
+                            paymentID: paymentKey.paymentID); // thành công
                     if (responseNewTime != null &&
                         responseNewTime.data != null) {
                       controller.setPaymentData(responseNewTime);
@@ -211,14 +220,14 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                 controller.onInitExtBooking();
               }
             } else {
-              PaymentModel? result = await controller
-                  .getPaymentKeyExtTimeBooking(item.priceID!);
+              PaymentModel? result =
+                  await controller.getPaymentKeyExtTimeBooking(item.priceID!);
 
               if (result != null) {
                 if (result.reqRedirectionUri != null &&
                     result.reqRedirectionUri!.isNotEmpty) {
                   final paymentResult = await showPaymentBottomSheet(
-                    context: context,
+                    context: Get.context ?? cxt,
                     url: result.reqRedirectionUri!,
                     onPaymentComplete: () {
                       debugPrint('Payment completed successfully');
@@ -229,16 +238,18 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                   );
 
                   if (paymentResult == true) {
-                    // cập nhật and update time
-                    var responseNewTime =
-                        await controller.onUpdateAffterHardware(1,
-                            isExtTime: true,
-                            paymentID:
-                                result.paymentID); // thành công
-                    if (responseNewTime != null &&
-                        responseNewTime.data != null) {
-                      controller.setPaymentData(responseNewTime);
-                    }
+                    await controller
+                        .extTimeHardware(item.priceTime!)
+                        .then((isOK) async {
+                      var responseNewTime =
+                          await controller.onUpdateAffterHardware(1,
+                              isExtTime: true,
+                              paymentID: result.paymentID); // thành công
+                      if (responseNewTime != null &&
+                          responseNewTime.data != null) {
+                        controller.setPaymentData(responseNewTime);
+                      }
+                    });
                   } else {
                     // reject booking
                     await controller.onUpdateAffterHardware(-1,
@@ -269,33 +280,39 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                     children: [
                       Text(
                         "${item.priceTime} ${TKeys.hours.translate()}",
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF222B45),
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF222B45),
+                                ),
                       ),
                       if (!controller.isVip && item.priceAmount != null) ...[
                         const SizedBox(height: 4),
                         Text(
                           "${formatCurrency(item.priceAmount)} ${item.unitPrice}",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF6B7280),
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: const Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                         ),
                       ],
                       if (controller.isVip) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.star, size: 14, color: Colors.amber.shade700),
+                            Icon(Icons.star,
+                                size: 14, color: Colors.amber.shade700),
                             const SizedBox(width: 4),
                             Text(
                               TKeys.premium_member.translate(),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.amber.shade700,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.amber.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
                           ],
                         ),
@@ -306,7 +323,8 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
 
                 // Action button
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,

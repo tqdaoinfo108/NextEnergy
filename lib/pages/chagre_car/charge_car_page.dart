@@ -5,7 +5,6 @@ import 'package:v2/pages/chagre_car/widget/build_choose_plan.dart';
 import 'package:v2/pages/customs/appbar.dart';
 import 'package:v2/services/localization_service.dart';
 import 'package:v2/utils/const.dart';
-import '../customs/page_life_cycle.dart';
 import 'charge_car_controller.dart';
 import 'widget/buid_charging.dart';
 import 'widget/build_wait_pluging.dart';
@@ -27,21 +26,11 @@ class ChargeCarPage extends GetView<ChargeCarController> {
             return false;
           }
         },
-        child: PageLifecycle(
-          stateChanged: (bool appeared) {
-            // Auto-reconnect khi trang xuất hiện lại
-            if (appeared && !controller.isAvailable) {
-              controller.handlePageReappear();
-            }
-          },
-          child: Scaffold(
+        child: Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             appBar: _buildAppBar(theme),
             body: _buildBody(theme),
-            // Thêm floating connection status
-            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          ),
-        ));
+          ));
   }
 
   // Tách AppBar thành method riêng để tối ưu rebuild
@@ -364,8 +353,6 @@ class ChargeCarPage extends GetView<ChargeCarController> {
               textAlign: TextAlign.center,
             ),
             
-            const SizedBox(height: 12),
-            
             // Status message
             Text(
               _getConnectionStatusMessage(),
@@ -508,22 +495,6 @@ class ChargeCarPage extends GetView<ChargeCarController> {
   Widget _buildConnectionActions(ThemeData theme) {
     return Obx(() => Column(
       children: [
-        // Retry button (show when not connected and bluetooth is on)
-        if (controller.isOnBluetooth && !controller.isAvailable)
-          ElevatedButton.icon(
-            onPressed: () => _handleRetryConnection(),
-            icon: const Icon(Icons.refresh),
-            label: Text(TKeys.retry.translate()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          
         // Enable Bluetooth button (show when bluetooth is off)
         if (!controller.isOnBluetooth)
           ElevatedButton.icon(
@@ -544,7 +515,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
         
         // Cancel button
         TextButton(
-          onPressed: () => Get.back(),
+          onPressed: () => controller.back(),
           child: Text(
             TKeys.cancel.translate(),
             style: TextStyle(color: Colors.grey.shade600),
@@ -554,21 +525,11 @@ class ChargeCarPage extends GetView<ChargeCarController> {
     ));
   }
 
-  // Handle retry connection with loading
-  Future<void> _handleRetryConnection() async {
-    EasyLoading.show(status: TKeys.connecting.translate());
-    try {
-      await controller.connectDevice();
-    } finally {
-      EasyLoading.dismiss();
-    }
-  }
-
   // Handle enable bluetooth with loading
   Future<void> _handleEnableBluetooth() async {
     EasyLoading.show(status: TKeys.grant_ble.translate());
     try {
-      await controller.enableBluetoothAndReconnect();
+      await controller.connectDevice();
     } finally {
       EasyLoading.dismiss();
     }
@@ -765,7 +726,7 @@ class ChargeCarPage extends GetView<ChargeCarController> {
   Future<void> _handleEnableBluetoothOverlay() async {
     EasyLoading.show(status: TKeys.grant_ble.translate());
     try {
-      await controller.enableBluetoothAndReconnect();
+      await controller.connectDevice();
     } finally {
       EasyLoading.dismiss();
     }

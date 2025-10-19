@@ -17,6 +17,7 @@ class UserModel {
   int? countVIP;
   String? oTP;
   String? phoneArea;
+  int? totalMoney;
 
   LoginType loginType = LoginType.none;
   UserModel(
@@ -51,6 +52,7 @@ class UserModel {
     timeOTP = json['TimeOTP'];
     oTP = json['OTP'];
     phoneArea = json["PhoneArea"];
+    totalMoney = json["TotalMoney"];
   }
 
   Map<String, dynamic> toJson() {

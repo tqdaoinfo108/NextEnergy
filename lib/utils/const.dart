@@ -4,6 +4,7 @@ class Constants {
   static String FULL_NAME = "FULL_NAME";
   static String PHONE = "PHONE";
   static String AVARTA = "AVARTA";
+  static String TOTAL_MONEY = "TOTAL_MONEY";
   static String PAYMENT_CARD = "PAYMENT_CARD";
   static String LOCAL_PIN_CODE = "LOCAL_PIN_CODE";
   static String COUNT_PIN_CODE = "COUNT_PIN_CODE";

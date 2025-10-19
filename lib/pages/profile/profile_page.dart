@@ -2,7 +2,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:v2/model/user_model.dart';
-import 'package:v2/pages/customs/appbar.dart';
 import 'package:v2/services/base_hive.dart';
 import 'package:v2/services/localization_service.dart';
 import 'package:v2/utils/const.dart';
@@ -17,19 +16,73 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
   String languageValue = "English";
   bool _isLoading = false;
+  int totalMoney = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     languageValue =
         HiveHelper.get(Constants.LANGUAGE_CODE, defaultvalue: "en") == "en"
             ? "English"
             : "Việt Nam";
     toggleLanguage(HiveHelper.get(Constants.LANGUAGE_CODE, defaultvalue: "en"));
+    
+    // Load user balance
+    _loadUserProfile();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Reload balance when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      _reloadBalance();
+    }
+  }
+
+  // Quick reload from Hive (instant update)
+  void _reloadBalance() {
+    setState(() {
+      totalMoney = HiveHelper.get(Constants.TOTAL_MONEY, defaultvalue: 0);
+    });
+  }
+
+  Future<void> _loadUserProfile() async {
+    final userId = HiveHelper.get(Constants.USER_ID);
+    if (userId != null) {
+      try {
+        var response = await HttpHelper.getProfile(userId);
+        if (response != null && response.data != null) {
+          setState(() {
+            totalMoney = response.data!.totalMoney ?? 0;
+          });
+          // Save to Hive for offline access
+          HiveHelper.put(Constants.TOTAL_MONEY, totalMoney);
+        }
+      } catch (e) {
+        print("Error loading profile: $e");
+        // Load from Hive if API fails
+        setState(() {
+          totalMoney = HiveHelper.get(Constants.TOTAL_MONEY, defaultvalue: 0);
+        });
+      }
+    } else {
+      // Load from Hive if no user ID
+      setState(() {
+        totalMoney = HiveHelper.get(Constants.TOTAL_MONEY, defaultvalue: 0);
+      });
+    }
   }
 
   void toggleLanguage(String lang) {
@@ -110,124 +163,201 @@ class _ProfilePageState extends State<ProfilePage> {
     // Lấy thông tin user từ Hive
     final fullName =
         HiveHelper.get(Constants.FULL_NAME, defaultvalue: "NextEnergy User");
-    final phone = HiveHelper.get(Constants.PHONE, defaultvalue: "");
     final userId = HiveHelper.get(Constants.USER_ID, defaultvalue: "");
     final avatarUrl = HiveHelper.get(Constants.AVARTA, defaultvalue: "");
 
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.primaryColor,
-            theme.primaryColor.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: theme.primaryColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // User Avatar
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 3,
-              ),
-            ),
-            child: avatarUrl.isNotEmpty
-                ? ClipOval(
-                    child: Image.network(
-                      avatarUrl,
-                      width: 64,
-                      height: 64,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.white,
-                        );
-                      },
-                    ),
-                  )
-                : Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.white,
-                  ),
-          ),
-          const SizedBox(width: 16),
-
-          // User Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fullName,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  userId != null 
-                      ? TKeys.premium_member.translate()
-                      : TKeys.premium_member.translate(),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-                
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    "⚡ ${TKeys.active_status.translate()}",
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive sizing
+        final isSmallScreen = constraints.maxWidth < 360;
+        
+        final avatarSize = isSmallScreen ? 60.0 : 70.0;
+        final horizontalPadding = isSmallScreen ? 12.0 : 16.0;
+        final verticalPadding = isSmallScreen ? 16.0 : 20.0;
+        
+        return Container(
+          margin: EdgeInsets.all(horizontalPadding),
+          padding: EdgeInsets.all(verticalPadding),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.primaryColor,
+                theme.primaryColor.withOpacity(0.8),
               ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: theme.primaryColor.withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // User Avatar
+              Container(
+                width: avatarSize,
+                height: avatarSize,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 3,
+                  ),
+                ),
+                child: avatarUrl.isNotEmpty
+                    ? ClipOval(
+                        child: Image.network(
+                          avatarUrl,
+                          width: avatarSize - 6,
+                          height: avatarSize - 6,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.person,
+                              size: avatarSize * 0.55,
+                              color: Colors.white,
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        Icons.person,
+                        size: avatarSize * 0.55,
+                        color: Colors.white,
+                      ),
+              ),
+              SizedBox(width: isSmallScreen ? 12 : 16),
 
-          // Edit Profile Button
-          IconButton(
-            onPressed: () => Get.toNamed("/profile_detail"),
-            icon: const Icon(
-              Icons.edit,
-              color: Colors.white,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.2),
-            ),
+              // User Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Name and Edit Button Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            fullName,
+                            style: (isSmallScreen 
+                                ? theme.textTheme.titleLarge 
+                                : theme.textTheme.headlineSmall)?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Edit Profile Button
+                        IconButton(
+                          onPressed: () => Get.toNamed("/profile_detail"),
+                          icon: Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: isSmallScreen ? 18 : 20,
+                          ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                            minimumSize: Size(32, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    
+                    // Premium Member Badge
+                    Text(
+                      userId != null 
+                          ? TKeys.premium_member.translate()
+                          : TKeys.premium_member.translate(),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: isSmallScreen ? 12 : null,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Status and Balance Tags (Responsive)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        // Active Status Badge
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 8 : 12, 
+                            vertical: isSmallScreen ? 4 : 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "⚡ ${TKeys.active_status.translate()}",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: isSmallScreen ? 10 : 12,
+                            ),
+                          ),
+                        ),
+                        
+                        // Balance Badge
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 8 : 12, 
+                            vertical: isSmallScreen ? 4 : 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.account_balance_wallet,
+                                size: isSmallScreen ? 12 : 14,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  _formatCurrency(totalMoney),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isSmallScreen ? 10 : 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -268,6 +398,18 @@ class _ProfilePageState extends State<ProfilePage> {
             TKeys.info_account.translate(),
             TKeys.manage_personal_information.translate(),
             () => Get.toNamed("/profile_detail"),
+          ),
+          _buildDivider(),
+          _buildModernMenuItem(
+            theme,
+            Icons.account_balance_wallet_outlined,
+            "Nạp tiền",
+            "Quản lý số dư và lịch sử nạp tiền",
+            () async {
+              await Get.toNamed("/input_money");
+              // Reload balance when returning from Input Money page
+              _reloadBalance();
+            },
           ),
           _buildDivider(),
           _buildModernMenuItem(
@@ -842,5 +984,14 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       },
     );
+  }
+
+  String _formatCurrency(int amount) {
+    // Format number with thousand separators
+    String formatted = amount.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '$formatted ₫';
   }
 }

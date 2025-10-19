@@ -3,6 +3,8 @@ import 'package:v2/pages/booking/booking_controller.dart';
 import 'package:v2/pages/booking/booking_page.dart';
 import 'package:v2/pages/chagre_car/charge_car_controller.dart';
 import 'package:v2/pages/chagre_car/charge_car_page.dart';
+import 'package:v2/pages/input_money/input_money_controller.dart';
+import 'package:v2/pages/input_money/input_money_page.dart';
 import 'package:v2/pages/login/login_controller.dart';
 import 'package:v2/pages/login/login_page.dart';
 import 'package:v2/pages/login_update/login_update_controller.dart';
@@ -100,6 +102,10 @@ get pageList => [
           name: '/session_device',
           page: () => const SessionDevicePage(),
           binding: SessionDeviceBind()),
+      GetPage(
+          name: '/input_money',
+          page: () => const InputMoneyPage(),
+          binding: InputMoneyBind()),
       GetPage(name: '/intro', page: () => const IntroPage()),
     ];
 // get getListRouters => {

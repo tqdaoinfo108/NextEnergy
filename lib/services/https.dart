@@ -24,11 +24,12 @@ class HttpHelper {
     try {
       final deviceInfoPlugin = DeviceInfoPlugin();
       // await FirebaseMessaging.instance.deleteToken();
-      // var token = await FirebaseMessaging.instance.getToken();
-      HiveHelper.put(Constants.FIREBASE_TOKEN, "1234");
+      var token = await FirebaseMessaging.instance.getToken();
+      HiveHelper.put(Constants.FIREBASE_TOKEN, token);
 
       var deviceName = (await deviceInfoPlugin.deviceInfo).data;
       var deviceNameString = Platform.isAndroid
+          // ignore: prefer_interpolation_to_compose_strings
           ? deviceName["manufacturer"] + " " + deviceName["product"]
           : deviceName["name"];
 
@@ -95,6 +96,8 @@ class HttpHelper {
       var response = await DioRequest.getHttp("/api/user/profile",
           query: {"userID": userID});
       if (response != null) {
+        print("response: ${response.data}");
+
         return UserModel.getUserResponse(response.data);
       }
       return null;
@@ -580,5 +583,105 @@ class HttpHelper {
       });
       // ignore: empty_catches
     } catch (e) {}
+  }
+
+  // Input Money APIs
+  static Future<ResponseBase<Map<String, dynamic>>?> getInputMoneyHistory(
+      int userID, {
+      String? fromDate,
+      String? toDate,
+      int? statusID,
+    }) async {
+    try {
+      Map<String, dynamic> queryParams = {"userID": userID};
+      
+      if (fromDate != null) queryParams["fromDate"] = fromDate;
+      if (toDate != null) queryParams["toDate"] = toDate;
+      if (statusID != null) queryParams["statusID"] = statusID;
+      
+      var response = await DioRequest.getHttp(
+          "/api/input-money/get-money-by-user",
+          query: queryParams);
+      if (response != null && response.data != null) {
+        // New API structure: {"data": {"totalMoney": 2000, "data": [...]}}
+        var responseData = response.data['data'];
+        if (responseData is Map<String, dynamic>) {
+          return ResponseBase<Map<String, dynamic>>(
+            data: {
+              'totalMoney': responseData['totalMoney'],
+              'data': responseData['data'] as List<dynamic>?,
+            },
+            message: response.data['message'],
+            isVIP: response.data['isVIP'],
+          );
+        }
+      }
+      return null;
+    } catch (e) {
+      print("Error getting input money history: $e");
+      return null;
+    }
+  }
+
+  static Future<ResponseBase<Map<String, dynamic>>?> createQRInputMoney(
+      int userID, double amount) async {
+    try {
+      var response = await DioRequest.post(
+          "/api/input-money/create-qr-input-money",
+          query: {"userID": userID},
+          data: {"UserID": userID, "Amount": amount});
+      if (response != null && response.data != null) {
+        return ResponseBase<Map<String, dynamic>>(
+          data: response.data['data'] as Map<String, dynamic>?,
+          message: response.data['message'],
+          isVIP: response.data['isVIP'],
+        );
+      }
+      return null;
+    } catch (e) {
+      print("Error creating QR input money: $e");
+      return null;
+    }
+  }
+
+  static Future<ResponseBase<Map<String, dynamic>>?> checkInputMoneyStatus(
+      int paymentID) async {
+    try {
+      var response = await DioRequest.getHttp(
+          "/api/input-money/check-status",
+          query: {"paymentID": paymentID});
+      if (response != null && response.data != null) {
+        return ResponseBase<Map<String, dynamic>>(
+          data: response.data['data'] as Map<String, dynamic>?,
+          message: response.data['message'],
+          isVIP: response.data['isVIP'],
+        );
+      }
+      return null;
+    } catch (e) {
+      print("Error checking input money status: $e");
+      return null;
+    }
+  }
+
+  static Future<ResponseBase<bool>?> updateInputMoneyStatus(
+      int userID, int inputID, int statusID) async {
+    try {
+      var response = await DioRequest.post(
+          "/api/input-money/update-status",
+          query: {"userID": userID},
+          data: {"InputID": inputID, "StatusID": statusID});
+      if (response != null && response.data != null) {
+        return ResponseBase<bool>(
+          data: response.data['data'] as bool?,
+          message: response.data['message'],
+          isVIP: response.data['isVIP'],
+        );
+      }
+      return null;
+    } catch (e) {
+      print("Error updating input money status: $e");
+      return null;
+    }
   }
 }
