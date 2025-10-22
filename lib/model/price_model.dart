@@ -5,6 +5,7 @@ class PriceModel {
   double? priceTime;
   double? priceAmount;
   String? unitPrice;
+  bool? isUseInput;
   double get getHour => priceTime! / 60;
   PriceModel({this.priceID, this.priceTime, this.priceAmount, this.unitPrice});
 
@@ -13,6 +14,7 @@ class PriceModel {
     priceTime = json['PriceTime'];
     priceAmount = json['PriceAmount'];
     unitPrice = json['UnitPrice'];
+    isUseInput = json['IsUseInput'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -21,6 +23,7 @@ class PriceModel {
     data['PriceTime'] = this.priceTime;
     data['PriceAmount'] = this.priceAmount;
     data['UnitPrice'] = this.unitPrice;
+    data['IsUseInput'] = this.isUseInput;
     return data;
   }
 

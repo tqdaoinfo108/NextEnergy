@@ -240,22 +240,58 @@ Widget buildChooseSlotCharge(BuildContext context, ChargeCarController controlle
                                                     ),
                                                   ),
                                                 ],
-                                                if (controller.isVip) ...[
-                                                  const SizedBox(height: 2),
+                                                // Badge hiển thị payment method
+                                                const SizedBox(height: 4),
+                                                if (controller.isVip) 
                                                   Row(
                                                     children: [
-                                                      Icon(Icons.star, size: 14, color: Colors.amber.shade700),
+                                                      Icon(Icons.star, size: 14, color: isSelected ? Colors.white : Colors.amber.shade700),
                                                       const SizedBox(width: 4),
                                                       Text(
                                                         TKeys.premium_member.translate(),
                                                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                          color: Colors.amber.shade700,
+                                                          color: isSelected ? Colors.white : Colors.amber.shade700,
                                                           fontWeight: FontWeight.w600,
                                                         ),
                                                       ),
                                                     ],
+                                                  )
+                                                else if (item.isUseInput == true)
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.account_balance_wallet,
+                                                        size: 14,
+                                                        color: isSelected ? Colors.white : const Color(0xFF10B981),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        "Thanh toán bằng tài khoản",
+                                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                          color: isSelected ? Colors.white : const Color(0xFF10B981),
+                                                          fontWeight: FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  )
+                                                else
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.qr_code,
+                                                        size: 14,
+                                                        color: isSelected ? Colors.white.withOpacity(0.7) : const Color(0xFF6B7280),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        "Thanh toán bằng QR Code",
+                                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                          color: isSelected ? Colors.white.withOpacity(0.7) : const Color(0xFF6B7280),
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
                                               ],
                                             ),
                                           ),
@@ -412,8 +448,10 @@ Widget buildChooseSlotCharge(BuildContext context, ChargeCarController controlle
                                   EasyLoading.showInfo(TKeys.fail_again2.translate());
                                   return false;
                                 }
-                                // is vip payment
+                                
+                                // Logic mới: Kiểm tra isVip -> isUseInput
                                 if (controller.isVip) {
+                                  // ✅ VIP: Sử dụng VIP payment
                                   await controller.onBookingPayment();
                                   if (controller.paymentData != null && controller.paymentData!.paymentKey!.isEmpty) {
                                     letOpenHardware(context, controller);
@@ -421,26 +459,42 @@ Widget buildChooseSlotCharge(BuildContext context, ChargeCarController controlle
                                     EasyLoading.showError(TKeys.fail_again2.translate(), duration: const Duration(seconds: 5));
                                   }
                                 } else {
-                                  var result = await controller.onBookingPayment();
-                                  if (result != null) {
-                                    if (result.reqRedirectionUri != null && result.reqRedirectionUri!.isNotEmpty) {
-                                      final paymentResult = await showPaymentBottomSheet(
-                                        context: context,
-                                        url: result.reqRedirectionUri!,
-                                        onPaymentComplete: () {
-                                          debugPrint('Payment completed successfully');
-                                        },
-                                        onPaymentCancelled: () {
-                                          EasyLoading.showInfo(TKeys.cancel.translate());
-                                        },
-                                      );
-                                      if (paymentResult == true) {
+                                  // ❌ Không VIP: Kiểm tra isUseInput
+                                  bool isUseInput = controller.currentPrice.value.isUseInput ?? false;
+                                  
+                                  if (isUseInput) {
+                                    // ✅ UseInput = true: Gọi auto payment -> Open hardware (không cần QR)
+                                    print("💳 Using input payment method");
+                                    var result = await controller.onBookingPayment();
+                                    if (result != null) {
+                                      controller.setPaymentData(ResponseBase<PaymentModel>(data: result));
+                                      await letOpenHardware(context, controller);
+                                    } else {
+                                      EasyLoading.showError(TKeys.fail_again2.translate(), duration: const Duration(seconds: 5));
+                                    }
+                                  } else {
+                                    var result = await controller.onBookingPayment();
+                                    if (result != null) {
+                                      if (result.reqRedirectionUri != null && result.reqRedirectionUri!.isNotEmpty) {
+                                        final paymentResult = await showPaymentBottomSheet(
+                                          context: context,
+                                          url: result.reqRedirectionUri!,
+                                          onPaymentComplete: () {
+                                            debugPrint('Payment completed successfully');
+                                          },
+                                          onPaymentCancelled: () {
+                                            EasyLoading.showInfo(TKeys.cancel.translate());
+                                          },
+                                        );
+                                        if (paymentResult == true) {
+                                          controller.setPaymentData(ResponseBase<PaymentModel>(data: result));
+                                          await letOpenHardware(context, controller);
+                                        }
+                                      } else {
+                                        // Fallback: Không có QR URL -> dùng auto payment
                                         controller.setPaymentData(ResponseBase<PaymentModel>(data: result));
                                         await letOpenHardware(context, controller);
                                       }
-                                    } else {
-                                      controller.setPaymentData(ResponseBase<PaymentModel>(data: result));
-                                      await letOpenHardware(context, controller);
                                     }
                                   }
                                 }

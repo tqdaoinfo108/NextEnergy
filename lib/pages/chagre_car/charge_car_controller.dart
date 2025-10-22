@@ -223,7 +223,22 @@ class ChargeCarController extends GetxControllerCustom
 
       bookingData = null;
       isauthorizeDevice = false;
-      await FlutterBluePlus.stopScan();
+      
+      // ✅ Cancel scan subscription TRƯỚC khi stop scan
+      try {
+        scanBlueoothSubScription.cancel();
+        print("✅ Scan subscription cancelled");
+      } catch (e) {
+        print("⚠️ Error cancelling scan subscription: $e");
+      }
+      
+      // ✅ Stop scan
+      try {
+        await FlutterBluePlus.stopScan();
+        print("✅ Scan stopped");
+      } catch (e) {
+        print("⚠️ Error stopping scan: $e");
+      }
 
       // Disconnect và clear GATT cache cho tất cả devices
       var listDevice = FlutterBluePlus.connectedDevices;
@@ -245,9 +260,26 @@ class ChargeCarController extends GetxControllerCustom
       }
 
       // Cancel subscriptions
-      stateBluetoothSubscription.cancel();
-      stateConnectedSubscription?.cancel();
-      _connectionStateSubscription?.cancel();
+      try {
+        stateBluetoothSubscription.cancel();
+        print("✅ Bluetooth state subscription cancelled");
+      } catch (e) {
+        print("⚠️ Error cancelling Bluetooth state subscription: $e");
+      }
+      
+      try {
+        stateConnectedSubscription?.cancel();
+        print("✅ Connected state subscription cancelled");
+      } catch (e) {
+        print("⚠️ Error cancelling connected state subscription: $e");
+      }
+      
+      try {
+        _connectionStateSubscription?.cancel();
+        print("✅ Connection state subscription cancelled");
+      } catch (e) {
+        print("⚠️ Error cancelling connection state subscription: $e");
+      }
 
       print("✅ Cleanup completed");
     } finally {
@@ -407,89 +439,6 @@ class ChargeCarController extends GetxControllerCustom
     }
   }
 
-  // Helper method: Connect to device with retry mechanism
-  Future<bool> _connectToDeviceWithRetry(BluetoothDevice device,
-      {int maxRetries = 3}) async {
-    maxRetryAttempts.value = maxRetries;
-
-    for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
-      // ✅ Check if controller still exists (user hasn't navigated away)
-      if (isClosed) {
-        print("❌ Controller disposed, stopping retry");
-        retryStatus.value = '';
-        currentRetryAttempt.value = 0;
-        return false;
-      }
-
-      try {
-        // Update UI status
-        currentRetryAttempt.value = retryCount + 1;
-        if (retryCount > 0) {
-          retryStatus.value =
-              '${TKeys.connecting.translate()} (Lần ${retryCount + 1}/$maxRetries)';
-          print("🔄 Connection retry attempt ${retryCount + 1}/$maxRetries");
-          await Future.delayed(
-              Duration(seconds: 1 * retryCount)); // Giảm delay: 1s, 2s
-        } else {
-          retryStatus.value = TKeys.connecting.translate();
-          print("🔌 Attempting to connect...");
-        }
-
-        // ⚡ Giảm timeout từ 10s xuống 5s để nhanh hơn
-        await device.connect(
-            autoConnect: true,
-            timeout: const Duration(seconds: 5), // 10s → 5s
-            mtu: null);
-
-        print(
-            "✅ Connected to device: ${device.platformName} (attempt ${retryCount + 1})");
-
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        var connectionState = await device.connectionState.first;
-        if (connectionState != BluetoothConnectionState.connected) {
-          print("❌ Device not in connected state after connect");
-          throw Exception("Device not in connected state");
-        }
-
-        if (Platform.isAndroid) {
-          try {
-            await device.requestMtu(512);
-            print("📶 MTU size updated to 512");
-            await Future.delayed(const Duration(milliseconds: 200));
-          } catch (e) {
-            print("⚠️ MTU request failed: $e");
-          }
-        }
-
-        // Clear retry status on success
-        retryStatus.value = '';
-        currentRetryAttempt.value = 0;
-        return true; // Success
-      } catch (e) {
-        print("❌ Connection attempt ${retryCount + 1} failed: $e");
-
-        if (retryCount == maxRetries - 1) {
-          print("❌ All connection attempts failed");
-          retryStatus.value = TKeys.unable_to_connect.translate();
-          currentRetryAttempt.value = 0;
-          return false; // All retries failed
-        } else {
-          try {
-            await device.disconnect();
-            await Future.delayed(const Duration(milliseconds: 500));
-          } catch (disconnectError) {
-            print("⚠️ Error disconnecting before retry: $disconnectError");
-          }
-        }
-      }
-    }
-
-    retryStatus.value = '';
-    currentRetryAttempt.value = 0;
-    return false;
-  }
-
   // kết nối device
   Future<void> connectDevice(
       {isCheckQR = false,
@@ -500,15 +449,58 @@ class ChargeCarController extends GetxControllerCustom
           .where((val) => val == BluetoothAdapterState.on)
           .first;
     }
-    int count = 1;
+    
+    // ✅ Check if controller is disposed
+    if (isClosed) {
+      print("❌ Controller disposed, cannot start connection");
+      return;
+    }
+    
+    // ✅ BƯỚC 1: Disconnect tất cả thiết bị hiện tại trước khi bắt đầu
+    print("🧹 Step 1: Cleaning up existing connections...");
+    var connectedDevices = FlutterBluePlus.connectedDevices;
+    for (var device in connectedDevices) {
+      try {
+        print("🔌 Disconnecting existing device: ${device.platformName}");
+        await device.disconnect();
+        await Future.delayed(const Duration(milliseconds: 300));
+      } catch (e) {
+        print("⚠️ Error disconnecting device: $e");
+      }
+    }
+    print("✅ Step 1 completed: All existing connections cleared");
+    
+    // ✅ BƯỚC 2: Cancel old subscription nếu có
+    try {
+      scanBlueoothSubScription.cancel();
+      print("✅ Old scan subscription cancelled");
+    } catch (e) {
+      print("⚠️ No old scan subscription to cancel or error: $e");
+    }
+    
+    // ✅ BƯỚC 2.1: Đảm bảo scan đã dừng
+    try {
+      await FlutterBluePlus.stopScan();
+      await Future.delayed(const Duration(milliseconds: 300));
+      print("✅ Scan stopped");
+    } catch (e) {
+      print("⚠️ Error stopping scan: $e");
+    }
 
+    int scanCount = 0;
+    const int maxScans = 6; // Tối đa 6 lần scan/connect
+    bool deviceFound = false;
+
+    // ✅ Create NEW subscription
     scanBlueoothSubScription = FlutterBluePlus.onScanResults.listen(
       (results) async {
         if (results.isEmpty) return;
+        if (deviceFound) return; // Tránh xử lý duplicate
 
         ScanResult result = results.last;
         if (result.device.platformName == nameDevice) {
-          print("📱 Found device: $nameDevice, RSSI: ${result.rssi}");
+          deviceFound = true;
+          print("📱 Found device: $nameDevice, RSSI: ${result.rssi}, Attempt: ${scanCount + 1}/$maxScans");
 
           // ✅ Stop scan immediately to prevent duplicate connections
           await FlutterBluePlus.stopScan();
@@ -517,16 +509,118 @@ class ChargeCarController extends GetxControllerCustom
           // Lưu device để có thể reconnect sau này
           _currentDevice = result.device;
 
-          // Thử connect với retry mechanism (tối đa 3 lần)
-          bool connectionSuccess =
-              await _connectToDeviceWithRetry(result.device, maxRetries: 3);
+          // ✅ BƯỚC 3: Thử connect với timeout ngắn (3s)
+          bool connectionSuccess = false;
+          
+          for (int attempt = 1; attempt <= 5; attempt++) {
+            if (isClosed) {
+              print("❌ Controller disposed, stopping connection attempts");
+              return;
+            }
 
-          if (!connectionSuccess) {
-            print("❌ Failed to connect after all retries");
-            return;
+            try {
+              print("🔌 Connection attempt $attempt/5 (Scan round ${scanCount + 1})");
+              
+              // Update UI status
+              currentRetryAttempt.value = attempt;
+              maxRetryAttempts.value = 5;
+              retryStatus.value = 'Đang kết nối... (Lần $attempt/5)';
+              
+              // ⚡ Timeout ngắn: 3 giây
+              await result.device.connect(
+                autoConnect: false,
+                timeout: const Duration(seconds: 3),
+                mtu: null,
+              );
+
+              // Verify connection
+              await Future.delayed(const Duration(milliseconds: 300));
+              var connectionState = await result.device.connectionState.first;
+              
+              if (connectionState == BluetoothConnectionState.connected) {
+                print("✅ Connection successful on attempt $attempt!");
+                connectionSuccess = true;
+                
+                // Request MTU if Android
+                if (Platform.isAndroid) {
+                  try {
+                    await result.device.requestMtu(512);
+                    print("📶 MTU size updated to 512");
+                  } catch (e) {
+                    print("⚠️ MTU request failed: $e");
+                  }
+                }
+                
+                break; // Success - exit retry loop
+              } else {
+                print("❌ Connection state not connected: $connectionState");
+                throw Exception("Connection state not connected");
+              }
+            } catch (e) {
+              print("❌ Connection attempt $attempt failed: $e");
+              
+              if (attempt < 5) {
+                // Disconnect và đợi trước khi thử lại
+                try {
+                  await result.device.disconnect();
+                  await Future.delayed(Duration(seconds: 1 * attempt)); // Progressive delay: 1s, 2s, 3s, 4s
+                } catch (disconnectError) {
+                  print("⚠️ Error disconnecting before retry: $disconnectError");
+                }
+              }
+            }
           }
 
+          if (!connectionSuccess) {
+            print("❌ Failed all 5 connection attempts for scan round ${scanCount + 1}");
+            
+            // ✅ BƯỚC 4: Nếu chưa hết 6 lần, tiếp tục scan
+            scanCount++;
+            if (scanCount < maxScans) {
+              print("🔄 Retrying scan... (Round ${scanCount + 1}/$maxScans)");
+              deviceFound = false; // Reset flag để có thể scan lại
+              
+              // Delay trước khi scan lại
+              await Future.delayed(const Duration(seconds: 2));
+              
+              if (!isClosed) {
+                try {
+                  await FlutterBluePlus.startScan(
+                    withNames: [nameDevice],
+                    timeout: Duration(seconds: 5),
+                  );
+                  print("✅ New scan started for round ${scanCount + 1}");
+                } catch (e) {
+                  print("❌ Error starting new scan: $e");
+                }
+              }
+              return;
+            } else {
+              // ✅ BƯỚC 5: Đã hết 6 lần, báo lỗi và back
+              print("❌ Failed after $maxScans scan/connect rounds");
+              retryStatus.value = '';
+              currentRetryAttempt.value = 0;
+              
+              // ✅ Cancel subscription để tránh trigger lại
+              try {
+                scanBlueoothSubScription.cancel();
+                print("✅ Scan subscription cancelled after all retries failed");
+              } catch (e) {
+                print("⚠️ Error cancelling subscription: $e");
+              }
+              
+              if (!isClosed && Get.currentRoute == "/charge_car") {
+                EasyLoading.showError(TKeys.fail_again2.translate());
+                back();
+              }
+              return;
+            }
+          }
+
+          // ✅ Connection thành công - tiếp tục setup
           print("✅ Connection established successfully");
+          retryStatus.value = '';
+          currentRetryAttempt.value = 0;
 
           // ❌ REMOVED: Không gọi authorizeDevice ở đây để tránh duplicate
           // authorizeDevice sẽ được gọi trong connection state listener
@@ -627,13 +721,29 @@ class ChargeCarController extends GetxControllerCustom
     );
     FlutterBluePlus.cancelWhenScanComplete(scanBlueoothSubScription);
 
+    // ✅ BƯỚC 2.5: Bắt đầu scan lần đầu tiên
+    print("🔍 Starting initial scan for device: $nameDevice");
     await FlutterBluePlus.startScan(
-        withNames: [nameDevice], timeout: Duration(seconds: timeoutSecond));
+        withNames: [nameDevice], timeout: Duration(seconds: 5));
 
-    // Đợi đến kết thúc > back > show thông báo
-    while (count < 11) {
-      count++;
+    // ✅ BƯỚC 6: Đợi quá trình scan/connect hoàn tất
+    // Maximum time: 6 rounds * (5s scan + 5 attempts * 3s + delays) ≈ 2-3 minutes
+    int waitCount = 0;
+    while (waitCount < 180 && !isClosed) { // 180 seconds max
       await Future.delayed(const Duration(seconds: 1));
+      waitCount++;
+      
+      // Nếu đã authorize thành công thì thoát sớm
+      if (isAuthorize.value) {
+        print("✅ Authorization completed, exiting wait loop");
+        break;
+      }
+      
+      // Nếu đã chuyển sang CHOOSE_TIME thì thoát
+      if (pageEnum.value == ChargeCarPageEnum.CHOOSE_TIME) {
+        print("✅ Page changed to CHOOSE_TIME, exiting wait loop");
+        break;
+      }
     }
   }
 

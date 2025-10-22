@@ -188,8 +188,9 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
 
             Get.back();
 
-            // kiểm tra có VIP không ?
+            // Logic mới: Kiểm tra isVip -> isUseInput
             if (controller.isVip) {
+              // ✅ VIP: Sử dụng VIP payment
               var paymentKey =
                   await controller.getPaymentKeyExtTimeBooking(item.priceID!);
               if (paymentKey != null) {
@@ -212,7 +213,6 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                     await controller.onUpdateAffterHardware(-1,
                         isExtTime: true,
                         paymentID: paymentKey.paymentID); // thất bại
-                    // ignore: prefer_const_constructors
                     EasyLoading.showError(TKeys.fail.translate(),
                         duration: const Duration(seconds: 5));
                   }
@@ -220,27 +220,20 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                 controller.onInitExtBooking();
               }
             } else {
+              // ❌ Không VIP: Kiểm tra isUseInput
+              bool isUseInput = item.isUseInput ?? false;
+              
               PaymentModel? result =
                   await controller.getPaymentKeyExtTimeBooking(item.priceID!);
 
               if (result != null) {
-                if (result.reqRedirectionUri != null &&
-                    result.reqRedirectionUri!.isNotEmpty) {
-                  final paymentResult = await showPaymentBottomSheet(
-                    context: Get.context ?? cxt,
-                    url: result.reqRedirectionUri!,
-                    onPaymentComplete: () {
-                      debugPrint('Payment completed successfully');
-                    },
-                    onPaymentCancelled: () {
-                      EasyLoading.showInfo(TKeys.cancel.translate());
-                    },
-                  );
-
-                  if (paymentResult == true) {
-                    await controller
-                        .extTimeHardware(item.priceTime!)
-                        .then((isOK) async {
+                if (isUseInput) {
+                  // ✅ UseInput = true: Gọi auto payment -> Extend hardware (không cần QR)
+                  print("💳 Using input payment method for extend time");
+                  await controller
+                      .extTimeHardware(item.priceTime!)
+                      .then((isOK) async {
+                    if (isOK) {
                       var responseNewTime =
                           await controller.onUpdateAffterHardware(1,
                               isExtTime: true,
@@ -249,20 +242,66 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                           responseNewTime.data != null) {
                         controller.setPaymentData(responseNewTime);
                       }
-                    });
+                    } else {
+                      // reject booking
+                      await controller.onUpdateAffterHardware(-1,
+                          isExtTime: true,
+                          paymentID: result.paymentID); // thất bại
+                      EasyLoading.showError(TKeys.fail.translate(),
+                          duration: const Duration(seconds: 5));
+                    }
+                  });
+                } else {
+                  // ❌ UseInput = false: Sử dụng QR Code payment
+                  print("📱 Using QR Code payment method for extend time");
+                  if (result.reqRedirectionUri != null &&
+                      result.reqRedirectionUri!.isNotEmpty) {
+                    final paymentResult = await showPaymentBottomSheet(
+                      context: cxt, // ✅ Sử dụng cxt thay vì Get.context
+                      url: result.reqRedirectionUri!,
+                      onPaymentComplete: () {
+                        debugPrint('Payment completed successfully');
+                      },
+                      onPaymentCancelled: () {
+                        EasyLoading.showInfo(TKeys.cancel.translate());
+                      },
+                    );
+
+                    if (paymentResult == true) {
+                      await controller
+                          .extTimeHardware(item.priceTime!)
+                          .then((isOK) async {
+                        if (isOK) {
+                          var responseNewTime =
+                              await controller.onUpdateAffterHardware(1,
+                                  isExtTime: true,
+                                  paymentID: result.paymentID); // thành công
+                          if (responseNewTime != null &&
+                              responseNewTime.data != null) {
+                            controller.setPaymentData(responseNewTime);
+                          }
+                        } else {
+                          // reject booking
+                          await controller.onUpdateAffterHardware(-1,
+                              isExtTime: true,
+                              paymentID: result.paymentID); // thất bại
+                          EasyLoading.showError(TKeys.fail.translate(),
+                              duration: const Duration(seconds: 5));
+                        }
+                      });
+                    } else {
+                      // reject booking
+                      await controller.onUpdateAffterHardware(-1,
+                          isExtTime: true,
+                          paymentID: result.paymentID); // thất bại
+                      EasyLoading.showError(TKeys.fail.translate(),
+                          duration: const Duration(seconds: 5));
+                    }
                   } else {
-                    // reject booking
-                    await controller.onUpdateAffterHardware(-1,
-                        isExtTime: true,
-                        paymentID: result.paymentID); // thất bại
-                    // ignore: prefer_const_constructors
+                    // Fallback: Không có QR URL
                     EasyLoading.showError(TKeys.fail.translate(),
                         duration: const Duration(seconds: 5));
                   }
-                } else {
-                  // ignore: prefer_const_constructors
-                  EasyLoading.showError(TKeys.fail.translate(),
-                      duration: const Duration(seconds: 5));
                 }
               }
             }
@@ -297,8 +336,9 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                                   ),
                         ),
                       ],
-                      if (controller.isVip) ...[
-                        const SizedBox(height: 4),
+                      // Badge hiển thị payment method
+                      const SizedBox(height: 6),
+                      if (controller.isVip)
                         Row(
                           children: [
                             Icon(Icons.star,
@@ -311,12 +351,66 @@ class ExtTimeChargeCarBottomSheet extends StatelessWidget {
                                   .bodySmall
                                   ?.copyWith(
                                     color: Colors.amber.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        )
+                      else if (item.isUseInput == true)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: const Color(0xFF10B981).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.account_balance_wallet,
+                                size: 12,
+                                color: const Color(0xFF10B981),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "Thanh toán tài khoản",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: const Color(0xFF10B981),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 11,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.qr_code,
+                              size: 12,
+                              color: const Color(0xFF6B7280),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Thanh toán QR Code",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: const Color(0xFF6B7280),
                                     fontWeight: FontWeight.w500,
+                                    fontSize: 11,
                                   ),
                             ),
                           ],
                         ),
-                      ],
                     ],
                   ),
                 ),
