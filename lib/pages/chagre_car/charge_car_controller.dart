@@ -384,15 +384,23 @@ class ChargeCarController extends GetxControllerCustom
     }
   }
 
-  // Attempt to reconnect to device (with max attempts limit)
+  // Attempt to reconnect to device (with max attempts limit - for non-charging states)
   void _attemptReconnect() async {
     if (!_shouldMaintainConnection) {
       print("⏭️ Reconnect skipped - maintenance disabled");
       return;
     }
 
+    // ✅ Check if this is a CHARGING session - if yes, use continuous reconnect instead
+    if (pageEnum.value == ChargeCarPageEnum.CHARGING) {
+      print("🔄 Switching to continuous reconnect for CHARGING session");
+      _startContinuousReconnect();
+      return;
+    }
+
+    // ✅ For non-charging states: Max 5 attempts
     if (_reconnectAttempts >= _maxReconnectAttempts) {
-      print("⚠️ Max reconnect attempts reached ($_maxReconnectAttempts)");
+      print("⚠️ Max reconnect attempts reached ($_maxReconnectAttempts) for non-charging state");
       EasyLoading.showError(
         TKeys.fail_again2.translate(),
         duration: const Duration(seconds: 3),
@@ -401,7 +409,7 @@ class ChargeCarController extends GetxControllerCustom
     }
 
     _reconnectAttempts++;
-    print("🔄 Reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts");
+    print("🔄 Reconnect attempt $_reconnectAttempts/$_maxReconnectAttempts (non-charging)");
 
     // Đợi một chút trước khi thử reconnect
     await Future.delayed(Duration(seconds: 2 * _reconnectAttempts));
@@ -429,7 +437,7 @@ class ChargeCarController extends GetxControllerCustom
     } catch (e) {
       print("❌ Reconnect attempt failed: $e");
 
-      // Thử lại sau một khoảng thời gian
+      // Thử lại sau một khoảng thời gian (chỉ nếu chưa hết max attempts)
       if (_reconnectAttempts < _maxReconnectAttempts) {
         _reconnectTimer = Timer(
           Duration(seconds: 3 * _reconnectAttempts),
@@ -538,16 +546,13 @@ class ChargeCarController extends GetxControllerCustom
               var connectionState = await result.device.connectionState.first;
               
               if (connectionState == BluetoothConnectionState.connected) {
-                print("✅ Connection successful on attempt $attempt!");
                 connectionSuccess = true;
                 
                 // Request MTU if Android
                 if (Platform.isAndroid) {
                   try {
                     await result.device.requestMtu(512);
-                    print("📶 MTU size updated to 512");
                   } catch (e) {
-                    print("⚠️ MTU request failed: $e");
                   }
                 }
                 
@@ -628,8 +633,7 @@ class ChargeCarController extends GetxControllerCustom
 
           // Setup connection state monitoring với reconnect logic
           _connectionStateSubscription?.cancel();
-          _connectionStateSubscription = result.device.connectionState
-              .listen((BluetoothConnectionState state) async {
+          _connectionStateSubscription = result.device.connectionState.listen((BluetoothConnectionState state) async {
             _stateConnectedDevice.value = state;
 
             if (state == BluetoothConnectionState.disconnected) {
@@ -884,7 +888,6 @@ class ChargeCarController extends GetxControllerCustom
   authorizeDevice(BluetoothDevice device) async {
     // ✅ Prevent duplicate authorization calls
     if (_isAuthorizingInProgress) {
-      print("⚠️ Authorization already in progress, skipping duplicate call");
       return;
     }
 
@@ -893,7 +896,6 @@ class ChargeCarController extends GetxControllerCustom
     try {
       // ✅ Check if controller still exists
       if (isClosed) {
-        print("❌ Controller disposed, skipping authorization");
         return;
       }
 
@@ -916,12 +918,6 @@ class ChargeCarController extends GetxControllerCustom
           .toString()
           .substring(10, 22);
       List<int> bytes = utf8.encode(authenValue);
-
-      print("🔐 Sending auth value: $authenValue");
-      print("🔐 Device name: $nameDevice");
-      print("🔐 Device substring: ${nameDevice.substring(5, 8)}");
-
-      // ✅ Check before MTU request
       if (isClosed) return;
 
       // Thử set MTU size
@@ -1035,7 +1031,6 @@ class ChargeCarController extends GetxControllerCustom
           var checkQRCode =
               await HttpHelper.updateHardware(bleResponseModel.toJson());
 
-          print("🌐 updateHardware response: $checkQRCode");
 
           if (isClosed) return;
 
@@ -1082,7 +1077,6 @@ class ChargeCarController extends GetxControllerCustom
           try {
             await c.write(bytes);
             await Future.delayed(const Duration(milliseconds: 500));
-            print("1 === Đã gửi bookingID ${bookingData?.bookID}");
           } catch (e) {
             print("❌ Failed to write bookingID: $e");
           }
@@ -1285,18 +1279,13 @@ class ChargeCarController extends GetxControllerCustom
           paymentID, statusID,
           isExtTime: isExtTime);
 
-      print("🔥 API response: ${data != null ? 'SUCCESS' : 'NULL'}");
-      print("🔥 API data: ${data?.data != null ? 'HAS_DATA' : 'NO_DATA'}");
-
       if (data != null && data.data != null) {
         bookingData = data.data!.booking;
-        print("🔥 Updated bookingData successfully");
         return data;
       } else {
-        print("❌ API returned null or empty data");
       }
+    // ignore: empty_catches
     } catch (e) {
-      print("❌ Exception in onUpdateAffterHardware: $e");
     }
     return null;
   }
