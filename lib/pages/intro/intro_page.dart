@@ -33,7 +33,7 @@ class IntroPage extends StatelessWidget {
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
                   TextSpan(
                       text:
-                          'Cảm ơn bạn đã sử dụng Next Energy. Trước tiên, vui lòng xác nhận thông tin cần thiết để sử dụng ứng dụng.'),
+                          'Cảm ơn bạn đã sử dụng EStation. Trước tiên, vui lòng xác nhận thông tin cần thiết để sử dụng ứng dụng.'),
                 ],
               ),
             ),
@@ -53,7 +53,7 @@ class IntroPage extends StatelessWidget {
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style.copyWith(fontSize: 18),
                 children: const <TextSpan>[
-                  TextSpan(text: 'Để sử dụng ứng dụng NextEnergy\ncần bật quyền「'),
+                  TextSpan(text: 'Để sử dụng ứng dụng EStation\ncần bật quyền「'),
                   TextSpan(
                       text: 'Vị trí',
                       style: TextStyle(fontWeight: FontWeight.bold)),
@@ -84,7 +84,7 @@ class IntroPage extends StatelessWidget {
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style.copyWith(fontSize: 18),
                 children: const <TextSpan>[
-                  TextSpan(text: 'Ứng dụng NextEnergy có thể đặt trước việc sạc bằng cách quét mã QR bằng camera. Để quét mã QR, bạn cần bật quyền camera.'),
+                  TextSpan(text: 'Ứng dụng EStation có thể đặt trước việc sạc bằng cách quét mã QR bằng camera. Để quét mã QR, bạn cần bật quyền camera.'),
                   
                 ],
               ),
@@ -107,7 +107,7 @@ class IntroPage extends StatelessWidget {
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style.copyWith(fontSize: 18),
                 children: const <TextSpan>[
-                  TextSpan(text: 'Có thể sạc bằng thao tác từ ứng dụng! Việc điều khiển sạc giữa ứng dụng NextEnergy và trạm sạc được thực hiện qua kết nối '),
+                  TextSpan(text: 'Có thể sạc bằng thao tác từ ứng dụng! Việc điều khiển sạc giữa ứng dụng EStation và trạm sạc được thực hiện qua kết nối '),
                   TextSpan(
                       text: 'Bluetooth',
                       style: TextStyle(fontWeight: FontWeight.bold)),

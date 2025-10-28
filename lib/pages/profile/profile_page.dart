@@ -162,7 +162,7 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
   Widget _buildUserProfileHeader(ThemeData theme) {
     // Lấy thông tin user từ Hive
     final fullName =
-        HiveHelper.get(Constants.FULL_NAME, defaultvalue: "NextEnergy User");
+        HiveHelper.get(Constants.FULL_NAME, defaultvalue: "EStation User");
     final userId = HiveHelper.get(Constants.USER_ID, defaultvalue: "");
     final avatarUrl = HiveHelper.get(Constants.AVARTA, defaultvalue: "");
 
