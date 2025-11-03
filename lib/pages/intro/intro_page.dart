@@ -106,7 +106,7 @@ class IntroPage extends StatelessWidget {
               textAlign: TextAlign.center,
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style.copyWith(fontSize: 18),
-                children: const <TextSpan>[
+                children: const <TextSpan>[ 
                   TextSpan(text: 'Có thể sạc bằng thao tác từ ứng dụng! Việc điều khiển sạc giữa ứng dụng EStation và trạm sạc được thực hiện qua kết nối '),
                   TextSpan(
                       text: 'Bluetooth',
